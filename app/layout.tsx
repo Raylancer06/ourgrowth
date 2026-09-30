@@ -4,6 +4,7 @@ import "./globals.css";
 import SmoothScroll from "@/components/animations/SmoothScroll";
 import ScrollProgress from "@/components/animations/ScrollProgress";
 import { ToastProvider } from "@/components/ui/Toast";
+import { CartProvider } from "@/context/CartContext";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -42,10 +43,12 @@ export default function RootLayout({
     <html lang="en" className={`${plusJakartaSans.variable}`}>
       <body className="bg-surface font-sans text-on-surface antialiased selection:bg-secondary-container selection:text-primary">
         <SmoothScroll>
-          <ToastProvider>
-            <ScrollProgress />
-            {children}
-          </ToastProvider>
+          <CartProvider>
+            <ToastProvider>
+              <ScrollProgress />
+              {children}
+            </ToastProvider>
+          </CartProvider>
         </SmoothScroll>
       </body>
     </html>

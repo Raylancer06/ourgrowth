@@ -29,20 +29,20 @@ export default function Footer() {
           {/* Brand Info & Newsletter */}
           <div className="lg:col-span-2 flex flex-col pr-0 lg:pr-space-lg">
             <div className="flex items-center gap-space-sm mb-space-sm">
-              <div className="relative h-12 w-48 bg-surface-container-lowest px-3 py-1.5 rounded-2xl shadow-sm">
+              <Link href="/" className="relative h-12 w-48 bg-surface-container-lowest px-3 py-1.5 rounded-2xl shadow-sm block">
                 <Image
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxX9XF8O7niPyFjKlIFGqKTb2t1Mv4rQmW4bRCrJ4MHI0Xq7p6WDiR9vwHNuf71KBIcpqizKL9gSAfT-nI7qeMp_mKNvhJqF1Lk_yOpDo_I5zgS7L6-pFbDs-gXjdo8ZjsGbQ_w4voqbT9mlZGfT6gO2O863zCjXT0xlwlJlM3iO5ssfQR0Tm7vu8Ts8mvGVfwJVeu2Eh99KXbXegkw-x0WqaXcXNMMiCxhQXmRdHlnHbtxshEDi63PwA7fDtNFLRPhQ"
                   alt="OurGrowth Enterprises"
                   fill
                   className="object-contain p-1"
                 />
-              </div>
+              </Link>
             </div>
             <p className="font-body-md text-body-md text-surface-container-high mb-space-md font-semibold">
               Pure · Peeled · Garlic — Freshly Peeled. Hygienically Packed. Ready to Cook.
             </p>
             <p className="text-surface-variant mb-space-lg leading-relaxed font-normal text-xs sm:text-sm">
-              Premium farm-direct peeled garlic cloves, processed under certified food safety environments for kitchens, cloud kitchens, and restaurant enterprises across India.
+              Premium farm-direct peeled garlic cloves, dry air-peeled under certified food safety environments for kitchens, cloud kitchens, and restaurant enterprises across India.
             </p>
 
             {/* Newsletter */}
@@ -82,29 +82,31 @@ export default function Footer() {
           {/* Quick Links */}
           <div>
             <h4 className="font-headline-sm text-base text-surface-bright mb-space-md font-bold">
-              Quick Links
+              Navigation
             </h4>
             <ul className="flex flex-col gap-space-sm text-surface-variant text-xs sm:text-sm">
-              <li><Link href="#home" className="hover:text-secondary-fixed transition-colors">Home</Link></li>
-              <li><Link href="#products" className="hover:text-secondary-fixed transition-colors">Shop Garlic Clustered</Link></li>
-              <li><Link href="#about" className="hover:text-secondary-fixed transition-colors">About OurGrowth</Link></li>
-              <li><Link href="#grades" className="hover:text-secondary-fixed transition-colors">Garlic Grades</Link></li>
-              <li><Link href="#workflow" className="hover:text-secondary-fixed transition-colors">Quality Assurance</Link></li>
-              <li><Link href="#faqs" className="hover:text-secondary-fixed transition-colors">Contact &amp; FAQs</Link></li>
+              <li><Link href="/" className="hover:text-secondary-fixed transition-colors">Home Storefront</Link></li>
+              <li><Link href="/shop" className="hover:text-secondary-fixed transition-colors">Produce Catalog</Link></li>
+              <li><Link href="/bulk-orders" className="hover:text-secondary-fixed transition-colors">B2B Wholesale Procurement</Link></li>
+              <li><Link href="/about" className="hover:text-secondary-fixed transition-colors">About Our Growth &amp; Tech</Link></li>
+              <li><Link href="/testimonials" className="hover:text-secondary-fixed transition-colors">Chef &amp; Caterer Reviews</Link></li>
+              <li><Link href="/blog" className="hover:text-secondary-fixed transition-colors">Culinary Journal</Link></li>
+              <li><Link href="/contact" className="hover:text-secondary-fixed transition-colors">Dispatch Hubs &amp; Contact</Link></li>
             </ul>
           </div>
 
-          {/* Garlic Grades */}
+          {/* Commerce & Account */}
           <div>
             <h4 className="font-headline-sm text-base text-surface-bright mb-space-md font-bold">
-              Garlic Grades
+              Store &amp; Account
             </h4>
             <ul className="flex flex-col gap-space-sm text-surface-variant text-xs sm:text-sm">
-              <li><Link href="#grades" className="hover:text-secondary-fixed transition-colors">Grade A Jumbo Peeled</Link></li>
-              <li><Link href="#grades" className="hover:text-secondary-fixed transition-colors">Grade B Medium Kitchen Cut</Link></li>
-              <li><Link href="#grades" className="hover:text-secondary-fixed transition-colors">Biriyani Special Peeled</Link></li>
-              <li><Link href="#grades" className="hover:text-secondary-fixed transition-colors">Vacuum Packed 5kg / 10kg</Link></li>
-              <li><Link href="#grades" className="hover:text-secondary-fixed transition-colors">Institutional Crates (50kg+)</Link></li>
+              <li><Link href="/cart" className="hover:text-secondary-fixed transition-colors">Shopping Cart</Link></li>
+              <li><Link href="/checkout" className="hover:text-secondary-fixed transition-colors">Kitchen Requisition Checkout</Link></li>
+              <li><Link href="/account" className="hover:text-secondary-fixed transition-colors">Merchant Dashboard</Link></li>
+              <li><Link href="/login" className="hover:text-secondary-fixed transition-colors">Client Portal Login</Link></li>
+              <li><Link href="/faqs" className="hover:text-secondary-fixed transition-colors">Freshness Help &amp; FAQs</Link></li>
+              <li><Link href="/policies" className="hover:text-secondary-fixed transition-colors">Cold-Chain &amp; Refund Policy</Link></li>
             </ul>
           </div>
 
@@ -116,7 +118,7 @@ export default function Footer() {
             <ul className="flex flex-col gap-space-sm text-surface-variant mb-space-md text-xs sm:text-sm">
               <li><span>Direct Desk: +91 94760 20341</span></li>
               <li><span>Email: supply@ourgrowth.in</span></li>
-              <li><span>Hub: West Bengal &amp; PAN India Supply</span></li>
+              <li><span>Kolkata • Mumbai • Bengaluru • Delhi</span></li>
               <li className="flex items-center gap-space-xs text-secondary-fixed font-bold">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>FSSAI Certified: 12823000000000</span>
@@ -127,7 +129,7 @@ export default function Footer() {
                 Cold-Chain Guarantee
               </span>
               <span className="text-[11px] leading-snug block opacity-90">
-                Delivered at 2°C–4°C in chilled thermocol crating to preserve pungent allicin natural oils.
+                Delivered at 2°C–4°C in insulated thermocol crating to preserve pungent allicin natural oils.
               </span>
             </div>
           </div>
@@ -145,6 +147,9 @@ export default function Footer() {
               <Truck className="w-4 h-4 text-secondary-fixed shrink-0" />
               <span>Hygienic Direct Delivery</span>
             </span>
+            <Link href="/policies" className="hover:text-secondary-fixed transition-colors underline">
+              Policies &amp; Compliance
+            </Link>
           </div>
         </div>
       </div>
