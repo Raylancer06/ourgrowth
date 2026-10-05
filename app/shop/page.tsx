@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -11,13 +11,37 @@ import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/R
 import { products, Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/ui/Toast";
+import { getProducts } from "@/lib/api";
 
 export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedPack, setSelectedPack] = useState<Record<string, number>>({});
+  const [productList, setProductList] = useState<Product[]>(products);
   const { addToCart } = useCart();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    getProducts().then((apiProds) => {
+      if (apiProds && apiProds.length > 0) {
+        setProductList((prev) =>
+          prev.map((local) => {
+            const match = apiProds.find((ap) => ap.sku === local.id || ap.slug === local.slug);
+            if (match) {
+              return {
+                ...local,
+                price: match.price,
+                packSizes: match.pack_sizes && match.pack_sizes.length > 0
+                  ? match.pack_sizes.map((ps) => ({ size: ps.size, price: ps.price, savings: ps.savings || "" }))
+                  : local.packSizes,
+              };
+            }
+            return local;
+          })
+        );
+      }
+    }).catch(() => null);
+  }, []);
 
   const categories = [
     { id: "all", label: "All Harvest Products" },
@@ -27,7 +51,7 @@ export default function ShopPage() {
     { id: "specialty", label: "Specialty & Blends" },
   ];
 
-  const filteredProducts = products.filter((prod) => {
+  const filteredProducts = productList.filter((prod) => {
     const matchesCategory =
       selectedCategory === "all" ||
       (selectedCategory === "commercial" && (prod.category === "commercial" || prod.category === "bulk-crates")) ||

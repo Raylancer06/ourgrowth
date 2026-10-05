@@ -20,7 +20,7 @@ export default function AccountDashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("og_customer_token");
+    const savedToken = localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token");
     if (!savedToken) {
       setLoading(false);
       return;
@@ -43,8 +43,11 @@ export default function AccountDashboardPage() {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("ourgrowth_customer_token");
     localStorage.removeItem("og_customer_token");
+    localStorage.removeItem("ourgrowth_customer_user");
     localStorage.removeItem("og_customer_profile");
+    localStorage.removeItem("user_authenticated");
     setToken(null);
     setProfile(null);
     setOrders([]);

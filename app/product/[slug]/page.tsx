@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -8,15 +8,33 @@ import { motion } from "framer-motion";
 import { Star, ShieldCheck, Truck, CheckCircle2, ShoppingBag, ArrowRight, Zap, RefreshCw, ChevronRight } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { products } from "@/data/products";
+import { products, Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/ui/Toast";
+import { getProduct } from "@/lib/api";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const product = products.find((p) => p.slug === slug) || products[0];
+  const initialProduct = products.find((p) => p.slug === slug) || products[0];
+  const [product, setProduct] = useState<Product>(initialProduct);
+
+  useEffect(() => {
+    if (slug) {
+      getProduct(slug).then((apiProd) => {
+        if (apiProd) {
+          setProduct((prev) => ({
+            ...prev,
+            price: apiProd.price,
+            packSizes: apiProd.pack_sizes && apiProd.pack_sizes.length > 0
+              ? apiProd.pack_sizes.map((ps) => ({ size: ps.size, price: ps.price, savings: ps.savings || "" }))
+              : prev.packSizes,
+          }));
+        }
+      }).catch(() => null);
+    }
+  }, [slug]);
 
   const [selectedPackIndex, setSelectedPackIndex] = useState(0);
   const [activeImage, setActiveImage] = useState(product.image);
