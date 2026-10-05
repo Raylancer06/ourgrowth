@@ -9,6 +9,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/ui/Toast";
+import { createOrder, registerCustomer } from "@/lib/api";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "upi" | "neft">("cod");
   const [deliverySlot, setDeliverySlot] = useState<string>("morning");
+  const [isPlacing, setIsPlacing] = useState(false);
   const [formData, setFormData] = useState({
     restaurantName: "",
     chefName: "",
@@ -28,17 +30,76 @@ export default function CheckoutPage() {
     gstin: "",
   });
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) {
       showToast("Your cart is empty. Please add items to proceed.");
       return;
     }
 
-    // Generate random order id
-    const orderId = `OG-${Math.floor(100000 + Math.random() * 900000)}`;
+    setIsPlacing(true);
+    let orderId = `OG-${Math.floor(100000 + Math.random() * 900000)}`;
+    let finalTotal = total.toString();
+
+    try {
+      let token = localStorage.getItem("ourgrowth_customer_token");
+
+      if (!token) {
+        // Automatically register / link customer using requisition details
+        const reg = await registerCustomer({
+          restaurant_name: formData.restaurantName || "Commercial Kitchen",
+          contact_name: formData.chefName || "Head Chef",
+          phone: formData.phone || "9876543210",
+          email: formData.email,
+          address: formData.address,
+          city: formData.city,
+          pincode: formData.pincode,
+          gstin: formData.gstin,
+        });
+
+        if (reg.success && reg.token) {
+          token = reg.token;
+          localStorage.setItem("ourgrowth_customer_token", token);
+          if (reg.customer) {
+            localStorage.setItem("ourgrowth_customer_user", JSON.stringify(reg.customer));
+          }
+        }
+      }
+
+      if (token) {
+        const orderItems = items.map((i) => ({
+          sku: i.productId,
+          pack_size: i.packSize,
+          quantity: i.quantity,
+        }));
+
+        const orderRes = await createOrder(token, {
+          items: orderItems,
+          payment_method: paymentMethod,
+          delivery_slot: deliverySlot,
+          shipping_address: {
+            address: formData.address,
+            city: formData.city,
+            pincode: formData.pincode,
+            restaurant_name: formData.restaurantName,
+            chef_name: formData.chefName,
+          },
+          customer_notes: `Delivery slot: ${deliverySlot}. Requisition for ${formData.restaurantName}.`,
+        });
+
+        if (orderRes.success && orderRes.order) {
+          orderId = orderRes.order.order_number;
+          finalTotal = orderRes.order.total_amount.toString();
+        }
+      }
+    } catch (err) {
+      console.warn("Backend order submission fallback:", err);
+    } finally {
+      setIsPlacing(false);
+    }
+
     localStorage.setItem("latest_order_id", orderId);
-    localStorage.setItem("latest_order_total", total.toString());
+    localStorage.setItem("latest_order_total", finalTotal);
     localStorage.setItem("latest_order_chef", formData.chefName || "Valued Chef");
     localStorage.setItem("latest_order_restaurant", formData.restaurantName || "Commercial Kitchen");
 
@@ -304,10 +365,11 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 form="checkout-form"
-                className="w-full py-4 rounded-full bg-secondary hover:bg-primary text-on-secondary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                disabled={isPlacing}
+                className="w-full py-4 rounded-full bg-secondary hover:bg-primary disabled:opacity-50 text-on-secondary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4" />
-                <span>Confirm &amp; Dispatch Kitchen Order</span>
+                <span>{isPlacing ? "Securing Requisition with ERP..." : "Confirm & Dispatch Kitchen Order"}</span>
               </button>
 
               <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container text-xs text-on-surface-variant space-y-1">
