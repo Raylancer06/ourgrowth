@@ -90,7 +90,7 @@ export default function Footer() {
               <li><Link href="/bulk-orders" className="hover:text-secondary-fixed transition-colors">B2B Wholesale Procurement</Link></li>
               <li><Link href="/about" className="hover:text-secondary-fixed transition-colors">About Our Growth &amp; Tech</Link></li>
               <li><Link href="/testimonials" className="hover:text-secondary-fixed transition-colors">Chef &amp; Caterer Reviews</Link></li>
-              <li><Link href="/blog" className="hover:text-secondary-fixed transition-colors">Culinary Journal</Link></li>
+              <li><Link href="/blog" className="hover:text-secondary-fixed transition-colors">Blog</Link></li>
               <li><Link href="/contact" className="hover:text-secondary-fixed transition-colors">Dispatch Hubs &amp; Contact</Link></li>
             </ul>
           </div>

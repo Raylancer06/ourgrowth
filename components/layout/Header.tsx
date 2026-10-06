@@ -41,8 +41,7 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
     { name: "SHOP", href: "/shop" },
     { name: "BULK ORDERS", href: "/bulk-orders" },
     { name: "ABOUT US", href: "/about" },
-    { name: "CHEF REVIEWS", href: "/testimonials" },
-    { name: "CULINARY JOURNAL", href: "/blog" },
+    { name: "BLOG", href: "/blog" },
     { name: "FAQS", href: "/faqs" },
     { name: "CONTACT", href: "/contact" },
   ];
