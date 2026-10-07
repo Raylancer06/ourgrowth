@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Package, Truck, Download, Calendar, MapPin, RefreshCw, FileText, ChevronRight, CheckCircle2, User, LogOut, Loader2 } from "lucide-react";
+import { Package, Truck, Download, Calendar, MapPin, RefreshCw, FileText, ChevronRight, CheckCircle2, User, LogOut, Loader2, Eye, Printer, X } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useToast } from "@/components/ui/Toast";
-import { getCustomerProfile, getCustomerOrders } from "@/lib/api";
+import { getCustomerProfile, getCustomerOrders, getOrderInvoice } from "@/lib/api";
 
 export default function AccountDashboardPage() {
   const router = useRouter();
@@ -18,6 +18,8 @@ export default function AccountDashboardPage() {
   const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [fetchingInvoice, setFetchingInvoice] = useState<string | null>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token");
@@ -106,6 +108,38 @@ export default function AccountDashboardPage() {
       sales_invoice_id: 104,
     }
   ];
+
+  const handleViewInvoice = async (ord: any, autoPrint = false) => {
+    if (!token) {
+      showToast("Please log in to view certified invoices.");
+      return;
+    }
+
+    if (!ord.has_invoice && !ord.sales_invoice_id) {
+      showToast(`Tax invoice for ${ord.order_number || ord.id} will be generated upon dispatch.`);
+      return;
+    }
+
+    const orderRef = ord.order_number || ord.id;
+    setFetchingInvoice(orderRef);
+    try {
+      const res = await getOrderInvoice(token, orderRef);
+      if (res.success && res.invoice) {
+        setSelectedInvoice(res.invoice);
+        if (autoPrint) {
+          setTimeout(() => {
+            window.print();
+          }, 400);
+        }
+      } else {
+        showToast(res.message || "Invoice not available or still in draft.");
+      }
+    } catch (err) {
+      showToast("Failed to fetch tax invoice. Please try again.");
+    } finally {
+      setFetchingInvoice(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
@@ -291,32 +325,71 @@ export default function AccountDashboardPage() {
           {/* Tab 3: Invoices */}
           {!loading && activeTab === "invoices" && (
             <div className="bg-surface-container-lowest p-6 rounded-3xl border border-surface-container space-y-4">
-              <h3 className="font-headline-sm text-lg font-bold text-primary mb-2">
-                Download Certified GST Invoices
-              </h3>
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-headline-sm text-lg font-bold text-primary">
+                  Certified GST Tax Invoices
+                </h3>
+                <span className="text-[11px] font-bold text-secondary bg-secondary-fixed/50 px-2.5 py-1 rounded-full">
+                  FSSAI & GST Compliant
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant mb-4">
+                Official commercial tax invoices generated upon order dispatch. Input Tax Credit (ITC) compliant for restaurant kitchens.
+              </p>
+
               {displayOrders.map((ord: any) => {
-                const taxAmt = Math.round(Number(ord.total_amount || ord.total || 0) * 0.05 / 1.05);
+                const taxAmt = Math.round(Number(ord.tax_amount || (Number(ord.total_amount || ord.total || 0) * 0.05 / 1.05)));
                 const orderDate = ord.created_at ? new Date(ord.created_at).toLocaleDateString("en-IN", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric"
-                }) : "2026-09-30";
+                }) : "Recent";
+                const hasInv = Boolean(ord.has_invoice || ord.sales_invoice_id || ord.invoice_number);
+                const invNum = ord.invoice_number || (hasInv ? `SI-${ord.id}` : null);
 
                 return (
-                  <div key={ord.id || ord.order_number} className="p-4 rounded-2xl bg-surface-container-low flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-bold text-primary block">{ord.order_number || `ORD-${ord.id}`} — Tax Invoice ({orderDate})</span>
-                      <span className="text-[11px] text-on-surface-variant">
-                        5% GST: ₹{taxAmt} • Total: ₹{Number(ord.total_amount || ord.total || 0).toLocaleString("en-IN")}
+                  <div key={ord.id || ord.order_number} className="p-4 rounded-2xl bg-surface-container-low flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-primary block">
+                          {invNum ? `Invoice: #${invNum}` : `Order: ${ord.order_number || `ORD-${ord.id}`}`}
+                        </span>
+                        {invNum ? (
+                          <span className="text-[10px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold">
+                            Verified GST
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full font-medium">
+                            Pending Dispatch
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-on-surface-variant block">
+                        Ref Order: {ord.order_number || `ORD-${ord.id}`} • Date: {orderDate}
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant block">
+                        GST: ₹{taxAmt.toLocaleString("en-IN")} • Grand Total: ₹{Number(ord.total_amount || ord.total || 0).toLocaleString("en-IN")}
                       </span>
                     </div>
-                    <button
-                      onClick={() => alert(`Downloading Invoice for ${ord.order_number || ord.id}. In production, this generates signed ERP invoice PDF.`)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-lowest text-primary font-bold hover:bg-primary hover:text-white transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>PDF</span>
-                    </button>
+
+                    <div className="flex items-center gap-2 self-end sm:start-auto">
+                      <button
+                        onClick={() => handleViewInvoice(ord, false)}
+                        disabled={fetchingInvoice === (ord.order_number || ord.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-secondary text-secondary hover:bg-secondary hover:text-white font-bold transition-colors disabled:opacity-50"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{fetchingInvoice === (ord.order_number || ord.id) ? "Loading..." : "View Invoice"}</span>
+                      </button>
+                      <button
+                        onClick={() => handleViewInvoice(ord, true)}
+                        disabled={fetchingInvoice === (ord.order_number || ord.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-secondary text-on-secondary hover:bg-primary font-bold transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Tax Invoice</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -356,6 +429,166 @@ export default function AccountDashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Invoice View Modal */}
+        {selectedInvoice && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-surface-container-lowest max-w-3xl w-full rounded-3xl p-6 sm:p-8 border border-surface-container shadow-2xl space-y-6 my-8">
+              <div className="flex items-center justify-between border-b border-surface-container pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                      Certified Tax Invoice
+                    </span>
+                    <span className="text-[10px] bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold">
+                      Original for Recipient
+                    </span>
+                  </div>
+                  <h2 className="font-headline-sm text-xl font-bold text-primary mt-1">
+                    Invoice #{selectedInvoice.invoice_number}
+                  </h2>
+                  <p className="text-xs text-on-surface-variant">
+                    Date: {selectedInvoice.invoice_date} {selectedInvoice.order_number && `• Ref: ${selectedInvoice.order_number}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="p-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary transition-colors"
+                    title="Print / Save PDF"
+                  >
+                    <Printer className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedInvoice(null)}
+                    className="p-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Seller & Buyer Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="p-4 rounded-2xl bg-surface-container-low space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-secondary block">Seller (Supplier)</span>
+                  <p className="font-bold text-primary text-sm">{selectedInvoice.seller?.company_name || "OurGrowth Enterprises"}</p>
+                  <p className="text-on-surface-variant">{selectedInvoice.seller?.address}</p>
+                  <p className="text-on-surface-variant">{selectedInvoice.seller?.city}, {selectedInvoice.seller?.state} {selectedInvoice.seller?.zipcode}</p>
+                  <p className="font-semibold text-primary">GSTIN: {selectedInvoice.seller?.gstin || "19AABCU9603R1ZM"}</p>
+                  {selectedInvoice.seller?.fssai_license && (
+                    <p className="text-emerald-700 font-semibold">FSSAI Lic: {selectedInvoice.seller.fssai_license}</p>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-2xl bg-surface-container-low space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-secondary block">Bill To (Recipient)</span>
+                  <p className="font-bold text-primary text-sm">{selectedInvoice.buyer?.company_name || selectedInvoice.buyer?.contact_person}</p>
+                  <p className="text-on-surface-variant">
+                    {typeof selectedInvoice.buyer?.billing_address === "object"
+                      ? `${selectedInvoice.buyer?.billing_address?.address || selectedInvoice.buyer?.billing_address?.address_line_1 || ""} ${selectedInvoice.buyer?.billing_address?.city || ""}`
+                      : selectedInvoice.buyer?.billing_address}
+                  </p>
+                  <p className="text-on-surface-variant">Contact: {selectedInvoice.buyer?.phone || selectedInvoice.buyer?.email}</p>
+                  <p className="font-semibold text-primary">
+                    GSTIN: {selectedInvoice.buyer?.gstin || "Unregistered / Composition"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-surface-container text-on-surface-variant font-bold">
+                      <th className="py-2">Item Description</th>
+                      <th className="py-2 text-center">HSN</th>
+                      <th className="py-2 text-center">Batch No</th>
+                      <th className="py-2 text-center">Qty</th>
+                      <th className="py-2 text-right">Rate</th>
+                      <th className="py-2 text-right">Taxable</th>
+                      <th className="py-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container">
+                    {selectedInvoice.items?.map((it: any, idx: number) => (
+                      <tr key={idx} className="text-on-surface">
+                        <td className="py-2.5">
+                          <span className="font-bold text-primary block">{it.product_name}</span>
+                          {it.sku && <span className="text-[10px] text-on-surface-variant">{it.sku}</span>}
+                        </td>
+                        <td className="py-2.5 text-center">{it.hsn_code || "—"}</td>
+                        <td className="py-2.5 text-center font-mono text-[11px]">{it.batch_number || "—"}</td>
+                        <td className="py-2.5 text-center">{it.quantity}</td>
+                        <td className="py-2.5 text-right">₹{Number(it.unit_price).toFixed(2)}</td>
+                        <td className="py-2.5 text-right">₹{Number(it.taxable_amount).toFixed(2)}</td>
+                        <td className="py-2.5 text-right font-bold text-primary">₹{Number(it.total_amount).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Financial Totals */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2 border-t border-surface-container">
+                <div>
+                  {selectedInvoice.amount_in_words && (
+                    <div className="p-3 bg-surface-container-low rounded-xl">
+                      <span className="text-[10px] uppercase font-bold text-on-surface-variant block">Amount in Words</span>
+                      <p className="font-semibold text-primary">{selectedInvoice.amount_in_words}</p>
+                    </div>
+                  )}
+                  {selectedInvoice.seller?.storage_instructions && (
+                    <p className="text-[11px] text-emerald-800 font-medium mt-2">
+                      {selectedInvoice.seller.storage_instructions}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 p-4 bg-surface-container-low rounded-2xl">
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>Taxable Subtotal:</span>
+                    <span>₹{Number(selectedInvoice.subtotal).toFixed(2)}</span>
+                  </div>
+                  {selectedInvoice.tax_summary?.map((tx: any, i: number) => (
+                    <div key={i} className="flex justify-between text-on-surface-variant text-[11px]">
+                      <span>{tx.tax_name} ({tx.rate}%):</span>
+                      <span>₹{Number(tx.amount).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {Number(selectedInvoice.delivery_fee || 0) > 0 && (
+                    <div className="flex justify-between text-on-surface-variant">
+                      <span>Reefer Logistics Fee:</span>
+                      <span>₹{Number(selectedInvoice.delivery_fee).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-base font-extrabold text-primary pt-2 border-t border-surface-container">
+                    <span>Grand Total:</span>
+                    <span>₹{Number(selectedInvoice.total_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setSelectedInvoice(null)}
+                  className="px-4 py-2 rounded-full border border-surface-container text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-5 py-2 rounded-full bg-secondary text-on-secondary hover:bg-primary font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print / Save Tax Invoice</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />
