@@ -188,3 +188,92 @@ export async function getOrderInvoice(token: string, orderIdOrNumber: string | n
   return res.json();
 }
 
+// -----------------------------------------------------------------------------
+// STOREFRONT CMS CONTENT APIS (PHASE 7)
+// -----------------------------------------------------------------------------
+
+export interface ApiFaq {
+  id: number;
+  slug: string;
+  question: string;
+  answer: string;
+  category: string;
+}
+
+export interface ApiTestimonial {
+  id: number;
+  slug: string;
+  client_name: string;
+  company: string;
+  quote: string;
+  rating: number;
+  city?: string;
+}
+
+export interface ApiBanner {
+  id: number;
+  slug: string;
+  headline: string;
+  subtitle?: string;
+  cta_text?: string;
+  cta_link?: string;
+  image_url?: string;
+}
+
+export interface ApiBusinessInfo {
+  id: number;
+  slug: string;
+  key: string;
+  value: string;
+  label: string;
+}
+
+export async function getFaqs(): Promise<ApiFaq[]> {
+  try {
+    const res = await fetch(`${API_BASE}/content/faqs`, { next: { revalidate: 60 } });
+    if (!res.ok) throw new Error('Failed to fetch FAQs');
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.warn('CMS API offline for FAQs, fallback will be used:', err);
+    return [];
+  }
+}
+
+export async function getTestimonials(): Promise<ApiTestimonial[]> {
+  try {
+    const res = await fetch(`${API_BASE}/content/testimonials`, { next: { revalidate: 60 } });
+    if (!res.ok) throw new Error('Failed to fetch testimonials');
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.warn('CMS API offline for testimonials, fallback will be used:', err);
+    return [];
+  }
+}
+
+export async function getBanners(): Promise<ApiBanner[]> {
+  try {
+    const res = await fetch(`${API_BASE}/content/banners`, { next: { revalidate: 60 } });
+    if (!res.ok) throw new Error('Failed to fetch banners');
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.warn('CMS API offline for banners, fallback will be used:', err);
+    return [];
+  }
+}
+
+export async function getBusinessInfo(): Promise<ApiBusinessInfo[]> {
+  try {
+    const res = await fetch(`${API_BASE}/content/business-info`, { next: { revalidate: 60 } });
+    if (!res.ok) throw new Error('Failed to fetch business info');
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.warn('CMS API offline for business info, fallback will be used:', err);
+    return [];
+  }
+}
+
+

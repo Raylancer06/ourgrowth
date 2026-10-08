@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown, HelpCircle, PhoneCall, Mail, Sparkles } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Reveal from "@/components/animations/Reveal";
+import { getFaqs } from "@/lib/api";
 
 interface ExtendedFaq {
   id: string;
-  category: "storage" | "rates" | "hygiene" | "delivery";
+  category: "storage" | "rates" | "hygiene" | "delivery" | "general" | string;
   question: string;
   answer: string;
 }
@@ -67,9 +68,26 @@ const extendedFaqs: ExtendedFaq[] = [
 ];
 
 export default function FaqsPage() {
+  const [faqsList, setFaqsList] = useState<ExtendedFaq[]>(extendedFaqs);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [openFaq, setOpenFaq] = useState<string | null>("faq-1");
+
+  useEffect(() => {
+    getFaqs().then((apiFaqs) => {
+      if (apiFaqs && apiFaqs.length > 0) {
+        const mapped: ExtendedFaq[] = apiFaqs.map((f) => ({
+          id: `cms-faq-${f.id}`,
+          category: f.category?.toLowerCase() || "general",
+          question: f.question,
+          answer: f.answer,
+        }));
+        setFaqsList(mapped);
+      }
+    }).catch(() => {
+      // Fallback already preset
+    });
+  }, []);
 
   const categories = [
     { id: "all", label: "All Questions" },
@@ -79,7 +97,7 @@ export default function FaqsPage() {
     { id: "delivery", label: "Cold-Chain Delivery" },
   ];
 
-  const filteredFaqs = extendedFaqs.filter((f) => {
+  const filteredFaqs = faqsList.filter((f) => {
     const matchesCat = selectedCategory === "all" || f.category === selectedCategory;
     const matchesQuery =
       f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,6 +108,7 @@ export default function FaqsPage() {
   const toggleFaq = (id: string) => {
     setOpenFaq((prev) => (prev === id ? null : id));
   };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
