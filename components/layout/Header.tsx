@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, User, Heart, ShoppingBag, Menu, X, ArrowUpRight, PhoneCall } from "lucide-react";
+import { Search, User, ShoppingBag, Menu, X, ArrowUpRight } from "lucide-react";
 import AnnouncementBar from "@/components/sections/AnnouncementBar";
 import { useToast } from "@/components/ui/Toast";
 import { useCart } from "@/context/CartContext";
@@ -15,12 +15,39 @@ interface HeaderProps {
 }
 
 export default function Header({ onOpenBulkModal }: HeaderProps) {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [wishlistCount, setWishlistCount] = useState(0);
   const pathname = usePathname();
   const { showToast } = useToast();
   const { itemCount } = useCart();
+  const [accountHref, setAccountHref] = useState("/login?redirect=/account");
+  const [customerAvatar, setCustomerAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkToken = () => {
+      const token = localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token");
+      setAccountHref(token ? "/account" : "/login?redirect=/account");
+      if (token) {
+        try {
+          const userRaw = localStorage.getItem("ourgrowth_customer_user");
+          if (userRaw) {
+            const user = JSON.parse(userRaw);
+            setCustomerAvatar(user?.avatar || null);
+          } else {
+            setCustomerAvatar(null);
+          }
+        } catch {
+          setCustomerAvatar(null);
+        }
+      } else {
+        setCustomerAvatar(null);
+      }
+    };
+    checkToken();
+    window.addEventListener("storage", checkToken);
+    return () => window.removeEventListener("storage", checkToken);
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,11 +57,6 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const handleWishlistClick = () => {
-    setWishlistCount((prev) => prev + 1);
-    showToast("Added grade to your restaurant wishlist!");
-  };
 
   const navLinks = [
     { name: "HOME", href: "/" },
@@ -97,42 +119,31 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
 
           {/* Actions & Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
-            {/* Direct Calling Desk */}
-            <a
-              href="tel:+919476020341"
-              className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors bg-surface-container-low px-3 py-1.5 rounded-full border border-surface-container"
-            >
-              <PhoneCall className="w-3.5 h-3.5 text-secondary" />
-              <span>+91 94760 20341</span>
-            </a>
-
             {/* Account / Dashboard */}
             <Link
-              href="/account"
-              aria-label="Merchant Account"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+              href={accountHref}
+              onClick={(e) => {
+                const token = typeof window !== "undefined"
+                  ? (localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token"))
+                  : null;
+                if (!token) {
+                  e.preventDefault();
+                  router.push("/login?redirect=/account");
+                }
+              }}
+              aria-label="Account"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all overflow-hidden border border-surface-container/60 hover:border-primary/40 shadow-xs"
             >
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Link>
-
-            {/* Wishlist */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleWishlistClick}
-              aria-label="Wishlist"
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
-            >
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-              {wishlistCount > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-secondary text-on-secondary font-label-md text-[10px] rounded-full flex items-center justify-center font-bold"
-                >
-                  {wishlistCount}
-                </motion.span>
+              {customerAvatar ? (
+                <img
+                  src={customerAvatar}
+                  alt="Customer Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
-            </motion.button>
+            </Link>
 
             {/* Cart Link with Live Count */}
             <Link
@@ -214,12 +225,37 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
               })}
               <div className="pt-3 border-t border-surface-container flex flex-col gap-2">
                 <Link
+                  href={accountHref}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    const token = typeof window !== "undefined"
+                      ? (localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token"))
+                      : null;
+                    if (!token) {
+                      e.preventDefault();
+                      router.push("/login?redirect=/account");
+                    }
+                  }}
+                  className="w-full border border-surface-container text-on-surface py-2.5 rounded-full font-bold text-center text-sm flex items-center justify-center gap-2 hover:bg-surface-container"
+                >
+                  {customerAvatar ? (
+                    <img
+                      src={customerAvatar}
+                      alt="Profile"
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4" />
+                  )}
+                  <span>My Account</span>
+                </Link>
+                <Link
                   href="/cart"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full bg-surface-container text-primary py-3 rounded-full font-bold text-center text-sm flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>View Kitchen Cart ({itemCount})</span>
+                  <span>View Cart ({itemCount})</span>
                 </Link>
                 <Link
                   href="/bulk-orders"

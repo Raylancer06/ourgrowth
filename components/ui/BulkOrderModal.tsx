@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, Package, Truck, ShieldCheck, Building2 } from "lucide-react";
+import { sendEnquiry } from "@/lib/api";
 
 interface BulkOrderModalProps {
   isOpen: boolean;
@@ -25,17 +26,36 @@ export default function BulkOrderModal({
     deliveryCadence: "Daily Morning",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      // Reset after a delay
+    setSubmitting(true);
+
+    try {
+      await sendEnquiry({
+        type: 'bulk_order',
+        name: formData.contactPerson || formData.businessName || 'B2B Client',
+        business_name: formData.businessName,
+        phone: formData.phone,
+        city: formData.city,
+        product_requested: formData.product,
+        quantity_requested: formData.quantity,
+        delivery_cadence: formData.deliveryCadence,
+        message: `Commercial requisition for ${formData.product} (${formData.quantity}) with delivery frequency: ${formData.deliveryCadence}.`,
+      });
+    } catch (err) {
+      console.error('Error submitting enquiry:', err);
+    } finally {
+      setSubmitting(false);
+      setSubmitted(true);
       setTimeout(() => {
-        setSubmitted(false);
-        onClose();
+        setTimeout(() => {
+          setSubmitted(false);
+          onClose();
+        }, 1500);
       }, 1500);
-    }, 1500);
+    }
   };
 
   return (

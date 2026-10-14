@@ -1,32 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2, ShoppingBag, ArrowRight, Truck, ShieldCheck, Tag, Check, ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Trash2, ShoppingBag, ArrowRight, Truck, ShieldCheck, Tag, Check, ChevronLeft, Lock, X, Loader2, Sparkles } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/ui/Toast";
+import { validateCoupon, getActiveCoupons } from "@/lib/api";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, subtotal, coldChainFee, total, itemCount } = useCart();
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+  const router = useRouter();
+  const { 
+    items, 
+    updateQuantity, 
+    removeFromCart, 
+    subtotal, 
+    coldChainFee, 
+    total, 
+    itemCount,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+    discountAmount
+  } = useCart();
+
+  const [couponInput, setCouponInput] = useState("");
+  const [isApplying, setIsApplying] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
   const { showToast } = useToast();
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (couponCode.toUpperCase() === "CHEF10" || couponCode.toUpperCase() === "BULK10") {
-      const discount = Math.round(subtotal * 0.1);
-      setAppliedDiscount(discount);
-      showToast("Coupon Applied! 10% commercial discount unlocked.");
-    } else {
-      showToast("Invalid code. Try 'CHEF10' for 10% off your commercial lot.");
+  useEffect(() => {
+    getActiveCoupons()
+      .then((coupons) => {
+        if (Array.isArray(coupons)) {
+          setAvailableCoupons(coupons);
+        }
+      })
+      .catch((err) => console.warn("Could not fetch active coupons:", err));
+  }, []);
+
+  const handleApplyCoupon = async (e?: React.FormEvent, customCode?: string) => {
+    if (e) e.preventDefault();
+    const code = (customCode || couponInput).trim().toUpperCase();
+    if (!code) {
+      showToast("Please enter a coupon code.");
+      return;
+    }
+
+    if (subtotal <= 0) {
+      showToast("Your cart is empty. Add items first.");
+      return;
+    }
+
+    setIsApplying(true);
+    try {
+      const res = await validateCoupon(code, subtotal);
+      if (res.success && res.coupon) {
+        applyCoupon(res.coupon);
+        setCouponInput("");
+        showToast(`🎉 Coupon ${res.coupon.code} applied! You saved ₹${res.coupon.discount_amount}.`);
+      } else {
+        showToast(res.message || "Invalid or inapplicable coupon code.");
+      }
+    } catch (err: any) {
+      showToast("Failed to apply coupon. Please check connection.");
+    } finally {
+      setIsApplying(false);
     }
   };
 
-  const finalTotal = Math.max(0, total - appliedDiscount);
+  const handleProceedToCheckout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const token = typeof window !== "undefined"
+      ? (localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token"))
+      : null;
+    if (!token) {
+      showToast("Please log in or create an account to proceed to checkout.");
+      router.push("/login?redirect=/checkout");
+    } else {
+      router.push("/checkout");
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
@@ -176,43 +233,117 @@ export default function CartPage() {
                     </span>
                   </div>
 
-                  {appliedDiscount > 0 && (
+                  {discountAmount > 0 && (
                     <div className="flex justify-between text-secondary font-bold">
-                      <span>Commercial Promo Discount:</span>
-                      <span>-₹{appliedDiscount.toLocaleString()}</span>
+                      <span className="flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5" />
+                        <span>Coupon Discount ({appliedCoupon?.code}):</span>
+                      </span>
+                      <span>-₹{discountAmount.toLocaleString()}</span>
                     </div>
                   )}
 
                   <div className="border-t border-surface-container pt-3 flex justify-between text-sm sm:text-base font-extrabold text-primary">
                     <span>Grand Total:</span>
-                    <span>₹{finalTotal.toLocaleString()}</span>
+                    <span>₹{total.toLocaleString()}</span>
                   </div>
                 </div>
 
-                {/* Promo Code Input */}
-                <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Promo code (CHEF10)"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 px-3 py-2 text-xs rounded-xl bg-surface-container-low border border-surface-container text-on-surface uppercase focus:outline-none focus:ring-1 focus:ring-secondary"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-bold text-primary transition-colors"
-                  >
-                    Apply
-                  </button>
-                </form>
+                {/* Promo Code Box */}
+                {appliedCoupon ? (
+                  <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
+                        <Tag className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs text-emerald-950 uppercase tracking-wide">
+                            {appliedCoupon.code}
+                          </span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-200/70 text-emerald-800">
+                            {appliedCoupon.type === "percentage" ? `${appliedCoupon.discount_value}% OFF` : `₹${appliedCoupon.discount_value} OFF`}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-700 font-medium">
+                          Saved ₹{discountAmount.toLocaleString()} on this order
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removeCoupon();
+                        showToast("Coupon removed.");
+                      }}
+                      className="text-xs text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                      title="Remove coupon"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <form onSubmit={(e) => handleApplyCoupon(e)} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Tag className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
+                        <input
+                          type="text"
+                          placeholder="Enter coupon (e.g. WELCOME10)"
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                          className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-surface-container-low border border-surface-container text-on-surface uppercase font-mono tracking-wide placeholder:font-sans placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:ring-1 focus:ring-secondary"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isApplying || !couponInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-secondary hover:bg-primary disabled:opacity-50 text-xs font-bold text-on-secondary transition-colors flex items-center gap-1.5"
+                      >
+                        {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                        <span>Apply</span>
+                      </button>
+                    </form>
 
-                <Link
-                  href="/checkout"
+                    {/* Available coupons quick list */}
+                    {availableCoupons.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-secondary" />
+                          Available Offers
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {availableCoupons.slice(0, 3).map((cpn) => (
+                            <button
+                              key={cpn.code}
+                              type="button"
+                              onClick={() => handleApplyCoupon(undefined, cpn.code)}
+                              className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-secondary/30 bg-secondary/5 hover:bg-secondary/15 text-primary transition-colors flex items-center gap-1"
+                            >
+                              <span className="uppercase text-secondary">{cpn.code}</span>
+                              <span className="text-on-surface-variant font-sans font-normal">
+                                ({cpn.type === "percentage" ? `${cpn.discount_value}%` : `₹${cpn.discount_value}`} off)
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleProceedToCheckout}
                   className="w-full py-4 rounded-full bg-secondary hover:bg-primary text-on-secondary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 text-center"
                 >
-                  <span>Proceed to Kitchen Checkout</span>
+                  <span>Proceed to Checkout</span>
                   <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
+
+                <p className="text-[11px] text-center text-on-surface-variant flex items-center justify-center gap-1.5 -mt-2">
+                  <Lock className="w-3.5 h-3.5 text-secondary" />
+                  <span>Account required to place orders</span>
+                </p>
 
                 <div className="flex items-center justify-center gap-4 text-[11px] text-on-surface-variant pt-2 border-t border-surface-container">
                   <span className="flex items-center gap-1 font-medium">

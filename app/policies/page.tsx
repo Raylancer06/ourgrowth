@@ -104,7 +104,7 @@ export default function PoliciesPage() {
               </h2>
             </div>
             <p>
-              We treat corporate kitchen volumes and restaurant rate contracts with strict business confidentiality. Trade accounts receive automated GST E-Way invoices compatible with all enterprise ERP software.
+              We treat all customer information with strict confidentiality. Commercial and business accounts receive automated GST tax invoices with full Input Tax Credit (ITC) compliance.
             </p>
           </div>
         </section>

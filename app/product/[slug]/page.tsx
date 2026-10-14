@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { Star, ShieldCheck, Truck, CheckCircle2, ShoppingBag, ArrowRight, Zap, RefreshCw, ChevronRight } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { products, Product } from "@/data/products";
+import { products, Product, transformApiProduct } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/ui/Toast";
 import { getProduct } from "@/lib/api";
@@ -17,30 +17,70 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const initialProduct = products.find((p) => p.slug === slug) || products[0];
-  const [product, setProduct] = useState<Product>(initialProduct);
-
-  useEffect(() => {
-    if (slug) {
-      getProduct(slug).then((apiProd) => {
-        if (apiProd) {
-          setProduct((prev) => ({
-            ...prev,
-            price: apiProd.price,
-            packSizes: apiProd.pack_sizes && apiProd.pack_sizes.length > 0
-              ? apiProd.pack_sizes.map((ps) => ({ size: ps.size, price: ps.price, savings: ps.savings || "" }))
-              : prev.packSizes,
-          }));
-        }
-      }).catch(() => null);
-    }
-  }, [slug]);
+  const initialProduct = products.find((p) => p.slug === slug || p.id === slug) || null;
+  const [product, setProduct] = useState<Product | null>(initialProduct);
+  const [loading, setLoading] = useState<boolean>(!initialProduct);
 
   const [selectedPackIndex, setSelectedPackIndex] = useState(0);
-  const [activeImage, setActiveImage] = useState(product.image);
+  const [activeImage, setActiveImage] = useState<string>(initialProduct?.image || "");
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (slug) {
+      getProduct(slug)
+        .then((apiProd) => {
+          if (apiProd) {
+            const transformed = transformApiProduct(apiProd);
+            setProduct(transformed);
+            setActiveImage(transformed.image);
+          } else if (!initialProduct) {
+            setProduct(null);
+          }
+        })
+        .catch(() => {
+          if (!initialProduct) setProduct(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
+        <Header />
+        <main className="w-full pt-28 bg-surface flex-1 flex flex-col items-center justify-center py-24">
+          <div className="w-8 h-8 rounded-full border-4 border-secondary border-t-transparent animate-spin mb-3" />
+          <p className="text-sm font-medium text-on-surface-variant">Loading fresh garlic details...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
+        <Header />
+        <main className="w-full pt-28 bg-surface flex-1 flex flex-col items-center justify-center py-24 text-center px-4">
+          <h2 className="font-headline-sm text-2xl font-bold text-primary mb-2">Product Not Found</h2>
+          <p className="text-xs text-on-surface-variant max-w-md mb-6">
+            The requested garlic item could not be retrieved from the catalog. It may have been archived or is out of stock.
+          </p>
+          <Link
+            href="/shop"
+            className="px-6 py-2.5 rounded-full bg-secondary text-on-secondary font-bold text-xs hover:bg-primary transition-colors"
+          >
+            Back to Garlic Catalog
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const currentPack = product.packSizes[selectedPackIndex] || product.packSizes[0];
   const allImages = [product.image, ...(product.secondaryImages || [])];
@@ -60,7 +100,15 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = () => {
     handleAddToCart();
-    router.push("/cart");
+    const token = typeof window !== "undefined"
+      ? (localStorage.getItem("ourgrowth_customer_token") || localStorage.getItem("og_customer_token"))
+      : null;
+    if (!token) {
+      showToast("Please log in or create an account to proceed to checkout.");
+      router.push("/login?redirect=/checkout");
+    } else {
+      router.push("/checkout");
+    }
   };
 
   return (
@@ -211,7 +259,7 @@ export default function ProductDetailPage() {
                   className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-secondary hover:bg-secondary/90 text-on-secondary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>Add to Kitchen Cart</span>
+                  <span>Add to Cart</span>
                 </button>
 
                 <button
@@ -219,7 +267,7 @@ export default function ProductDetailPage() {
                   className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   <Zap className="w-4 h-4 text-secondary-fixed" />
-                  <span>Instant Requisition</span>
+                  <span>Buy Now</span>
                 </button>
               </div>
 

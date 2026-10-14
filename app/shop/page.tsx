@@ -8,7 +8,7 @@ import { Search, ShoppingBag, Star, ShieldCheck, Truck, ArrowRight, Sparkles, Fi
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
-import { products, Product } from "@/data/products";
+import { products, Product, transformApiProduct } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/ui/Toast";
 import { getProducts } from "@/lib/api";
@@ -24,21 +24,7 @@ export default function ShopPage() {
   useEffect(() => {
     getProducts().then((apiProds) => {
       if (apiProds && apiProds.length > 0) {
-        setProductList((prev) =>
-          prev.map((local) => {
-            const match = apiProds.find((ap) => ap.sku === local.id || ap.slug === local.slug);
-            if (match) {
-              return {
-                ...local,
-                price: match.price,
-                packSizes: match.pack_sizes && match.pack_sizes.length > 0
-                  ? match.pack_sizes.map((ps) => ({ size: ps.size, price: ps.price, savings: ps.savings || "" }))
-                  : local.packSizes,
-              };
-            }
-            return local;
-          })
-        );
+        setProductList(apiProds.map(transformApiProduct));
       }
     }).catch(() => null);
   }, []);
@@ -55,6 +41,9 @@ export default function ShopPage() {
     const matchesCategory =
       selectedCategory === "all" ||
       (selectedCategory === "commercial" && (prod.category === "commercial" || prod.category === "bulk-crates")) ||
+      (selectedCategory === "retail" && prod.category === "retail") ||
+      (selectedCategory === "bulk-crates" && prod.category === "bulk-crates") ||
+      (selectedCategory === "specialty" && prod.category === "specialty") ||
       prod.category === selectedCategory;
 
     const matchesSearch =
@@ -79,7 +68,7 @@ export default function ShopPage() {
       badge: product.badge,
     });
 
-    showToast(`Added ${product.title} (${pack.size}) to kitchen requisition.`);
+    showToast(`Added ${product.title} (${pack.size}) to cart.`);
   };
 
   return (
@@ -257,13 +246,32 @@ export default function ShopPage() {
                             </span>
                           </div>
 
+                          {/* Live Warehouse Stock Badge */}
+                          <div className="flex items-center justify-between text-[11px] font-medium">
+                            {product.isInStock !== false && (product.availableStock === undefined || product.availableStock > 0) ? (
+                              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1 font-semibold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>In Stock {product.availableStock ? `(${Math.floor(product.availableStock)} KG live)` : ''}</span>
+                              </span>
+                            ) : (
+                              <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 font-semibold">
+                                Sold Out Today
+                              </span>
+                            )}
+                          </div>
+
                           <div className="grid grid-cols-12 gap-2 items-center">
                             <button
                               onClick={() => handleAdd(product)}
-                              className="col-span-8 py-2.5 px-4 rounded-full bg-secondary text-on-secondary font-label-lg text-xs sm:text-sm shadow-md hover:bg-primary transition-all flex items-center justify-center gap-2 font-bold"
+                              disabled={product.isInStock === false || (product.availableStock !== undefined && product.availableStock <= 0)}
+                              className={`col-span-8 py-2.5 px-4 rounded-full font-label-lg text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 font-bold ${
+                                product.isInStock === false || (product.availableStock !== undefined && product.availableStock <= 0)
+                                  ? "bg-gray-200 text-gray-500 cursor-not-allowed shadow-none"
+                                  : "bg-secondary text-on-secondary hover:bg-primary"
+                              }`}
                             >
                               <ShoppingBag className="w-4 h-4" />
-                              <span>Add to Kitchen</span>
+                              <span>{product.isInStock === false || (product.availableStock !== undefined && product.availableStock <= 0) ? 'Out of Stock' : 'Add to Cart'}</span>
                             </button>
                             <Link
                               href={`/product/${product.slug}`}

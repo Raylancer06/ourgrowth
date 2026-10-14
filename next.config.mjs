@@ -14,6 +14,15 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const backendUrl = (process.env.ERP_BACKEND_URL || process.env.NEXT_PUBLIC_ERP_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+    return [
+      {
+        source: '/api/erp/:path*',
+        destination: `${backendUrl}/api/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

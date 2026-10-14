@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
 import { dispatchHubs } from "@/data/hubs";
 import { useToast } from "@/components/ui/Toast";
+import { sendEnquiry } from "@/lib/api";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -19,12 +20,31 @@ export default function ContactPage() {
     message: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    showToast("Requisition sent! Dispatch coordinator will call you in 15 minutes.");
+    setIsSubmitting(true);
+
+    try {
+      await sendEnquiry({
+        type: 'contact',
+        name: formData.name,
+        business_name: formData.business,
+        email: formData.email,
+        phone: formData.phone,
+        city: formData.city,
+        product_requested: formData.inquiryType,
+        message: formData.message,
+      });
+    } catch (err) {
+      console.error('Failed to send enquiry:', err);
+    } finally {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      showToast("Requisition sent! Dispatch coordinator will call you in 15 minutes.");
+    }
   };
 
   return (

@@ -1,23 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ShoppingBag, Truck, Star } from "lucide-react";
-import { products, Product } from "@/data/products";
+import { products, Product, transformApiProduct } from "@/data/products";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
 import { useToast } from "@/components/ui/Toast";
 import { useCart } from "@/context/CartContext";
+import { getProducts } from "@/lib/api";
 
 interface ProductShowcaseProps {
   onSelectProductForBulk: (productName: string) => void;
 }
 
 export default function ProductShowcase({ onSelectProductForBulk }: ProductShowcaseProps) {
+  const [productList, setProductList] = useState<Product[]>(products);
   const [selectedPackIndex, setSelectedPackIndex] = useState<Record<string, number>>({});
   const { showToast } = useToast();
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    getProducts().then((apiProds) => {
+      if (apiProds && apiProds.length > 0) {
+        setProductList(apiProds.map(transformApiProduct));
+      }
+    }).catch(() => null);
+  }, []);
 
   const handleAddToCart = (product: Product) => {
     const pIndex = selectedPackIndex[product.id] ?? 0;
@@ -33,7 +43,7 @@ export default function ProductShowcase({ onSelectProductForBulk }: ProductShowc
       badge: product.badge,
     });
 
-    showToast(`Added ${product.title} (${pack.size}) to kitchen order.`);
+    showToast(`Added ${product.title} (${pack.size}) to cart.`);
   };
 
   return (
@@ -54,9 +64,9 @@ export default function ProductShowcase({ onSelectProductForBulk }: ProductShowc
           </Reveal>
         </div>
 
-        {/* 4-Grid Product Showcase */}
+        {/* Grid Product Showcase */}
         <StaggerContainer className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.slice(0, 4).map((product) => {
+          {productList.slice(0, 8).map((product) => {
             const activeIdx = selectedPackIndex[product.id] ?? 0;
             const currentPack = product.packSizes[activeIdx] || product.packSizes[0];
 
@@ -126,7 +136,7 @@ export default function ProductShowcase({ onSelectProductForBulk }: ProductShowc
                       className="flex-1 inline-flex items-center justify-center gap-1.5 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-white py-2 px-3 rounded-full text-xs font-bold transition-all shadow-xs"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>Add Lot</span>
+                      <span>Add to Cart</span>
                     </button>
 
                     <button

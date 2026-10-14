@@ -13,6 +13,16 @@ export interface CartItem {
   badge?: string;
 }
 
+export interface AppliedCoupon {
+  id?: number;
+  code: string;
+  name: string;
+  type: 'percentage' | 'flat';
+  discount_value: number;
+  discount_amount: number;
+  max_discount_amount?: number;
+}
+
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, "id">) => void;
@@ -22,6 +32,10 @@ interface CartContextType {
   itemCount: number;
   subtotal: number;
   coldChainFee: number;
+  appliedCoupon: AppliedCoupon | null;
+  applyCoupon: (coupon: AppliedCoupon) => void;
+  removeCoupon: () => void;
+  discountAmount: number;
   total: number;
 }
 
@@ -52,6 +66,7 @@ const INITIAL_ITEMS: CartItem[] = [
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(INITIAL_ITEMS);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load from localStorage if present
@@ -60,6 +75,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const stored = localStorage.getItem("ourgrowth_cart");
       if (stored) {
         setItems(JSON.parse(stored));
+      }
+      const storedCoupon = localStorage.getItem("ourgrowth_coupon");
+      if (storedCoupon) {
+        setAppliedCoupon(JSON.parse(storedCoupon));
       }
     } catch {
       // fallback to INITIAL_ITEMS
@@ -77,6 +96,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [items, isInitialized]);
+
+  // Save coupon to localStorage
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        if (appliedCoupon) {
+          localStorage.setItem("ourgrowth_coupon", JSON.stringify(appliedCoupon));
+        } else {
+          localStorage.removeItem("ourgrowth_coupon");
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, [appliedCoupon, isInitialized]);
 
   const addToCart = (newItem: Omit<CartItem, "id">) => {
     setItems((prev) => {
@@ -111,12 +145,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    setItems([]);
+    setAppliedCoupon(null);
+  };
+
+  const applyCoupon = (coupon: AppliedCoupon) => {
+    setAppliedCoupon(coupon);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+  };
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const coldChainFee = subtotal > 2000 ? 0 : 150; // Free cold-chain on orders > 2000
-  const total = subtotal + coldChainFee;
+
+  // Calculate live discount amount based on current subtotal if percentage
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      const disc = (subtotal * appliedCoupon.discount_value) / 100;
+      discountAmount = appliedCoupon.max_discount_amount
+        ? Math.min(disc, appliedCoupon.max_discount_amount)
+        : disc;
+    } else {
+      discountAmount = Math.min(appliedCoupon.discount_value, subtotal);
+    }
+    discountAmount = Math.round(discountAmount * 100) / 100;
+  }
+
+  const total = Math.max(0, Math.round((subtotal - discountAmount + coldChainFee) * 100) / 100);
 
   return (
     <CartContext.Provider
@@ -129,6 +189,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         itemCount,
         subtotal,
         coldChainFee,
+        appliedCoupon,
+        applyCoupon,
+        removeCoupon,
+        discountAmount,
         total,
       }}
     >

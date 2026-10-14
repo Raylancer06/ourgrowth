@@ -8,6 +8,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Reveal from "@/components/animations/Reveal";
 import { useToast } from "@/components/ui/Toast";
+import { sendEnquiry } from "@/lib/api";
 
 export default function BulkOrdersPage() {
   const [volume, setVolume] = useState<number>(100);
@@ -23,6 +24,7 @@ export default function BulkOrdersPage() {
     notes: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
 
   const getTierRate = (kg: number) => {
@@ -36,10 +38,30 @@ export default function BulkOrdersPage() {
   const estimatedCost = volume * ratePerKg;
   const savingsVsMarket = Math.round(volume * 65); // Market manual peel waste is approx ₹65/kg higher
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    showToast("Wholesale Requisition Ticket generated! Directing to Dispatch Head.");
+    setIsSubmitting(true);
+
+    try {
+      await sendEnquiry({
+        type: 'quote',
+        name: formData.contactPerson || formData.businessName || 'B2B Client',
+        business_name: formData.businessName,
+        phone: formData.phone,
+        email: formData.email,
+        city: formData.city,
+        product_requested: `Wholesale Crate (${formData.kitchenType})`,
+        quantity_requested: `${volume} KG`,
+        delivery_cadence: cadence,
+        message: `GSTIN: ${formData.gstin || 'N/A'}. Kitchen: ${formData.kitchenType}. Estimated: ₹${estimatedCost}. Notes: ${formData.notes || 'None'}`,
+      });
+    } catch (err) {
+      console.error('Error submitting wholesale requisition:', err);
+    } finally {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      showToast("Wholesale Requisition Ticket generated! Directing to Dispatch Head.");
+    }
   };
 
   return (
