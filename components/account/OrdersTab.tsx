@@ -1,16 +1,17 @@
 'use client';
 
 import Link from "next/link";
-import { Package, RefreshCw, ShoppingBag } from "lucide-react";
+import { Package, RefreshCw, ShoppingBag, FileText, CheckCircle2 } from "lucide-react";
 import { AccountOrder } from "./types";
 
 interface OrdersTabProps {
   orders: AccountOrder[];
   formatStatus: (status: string) => { label: string; class: string };
   onReorder: (order: AccountOrder) => void;
+  onViewInvoice?: (order: AccountOrder, autoPrint?: boolean) => void;
 }
 
-export default function OrdersTab({ orders, formatStatus, onReorder }: OrdersTabProps) {
+export default function OrdersTab({ orders, formatStatus, onReorder, onViewInvoice }: OrdersTabProps) {
   if (orders.length === 0) {
     return (
       <div className="py-12 px-6 text-center text-on-surface-variant border-2 border-dashed border-surface-container rounded-3xl bg-surface-container-lowest">
@@ -55,6 +56,13 @@ export default function OrdersTab({ orders, formatStatus, onReorder }: OrdersTab
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusMeta.class}`}>
                   {statusMeta.label}
                 </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  ord.payment_status === 'paid' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                    : 'bg-amber-100 text-amber-800 border border-amber-200'
+                }`}>
+                  {ord.payment_status === 'paid' ? 'PAID' : (ord.payment_status ? ord.payment_status.toUpperCase() : 'PENDING')}
+                </span>
               </div>
               <p className="text-xs text-on-surface-variant font-medium">{itemsSummary}</p>
               <span className="text-[11px] text-on-surface-variant block">
@@ -62,20 +70,32 @@ export default function OrdersTab({ orders, formatStatus, onReorder }: OrdersTab
               </span>
             </div>
 
-            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 border-surface-container pt-3 sm:pt-0">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 border-surface-container pt-3 sm:pt-0">
               <div className="text-right">
                 <span className="font-headline-sm text-base font-extrabold text-primary block">
                   ₹{Number(ord.total_amount || ord.total || 0).toLocaleString("en-IN")}
                 </span>
                 <span className="text-[10px] text-secondary font-bold">5% GST Included</span>
               </div>
-              <button
-                onClick={() => onReorder(ord)}
-                className="px-4 py-2 rounded-full bg-secondary text-on-secondary hover:bg-primary font-bold text-xs transition-colors flex items-center gap-1"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reorder</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {onViewInvoice && (
+                  <button
+                    onClick={() => onViewInvoice(ord, false)}
+                    className="px-3.5 py-2 rounded-full border border-secondary/30 bg-surface hover:bg-secondary/10 text-secondary font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs"
+                    title="View Certified GST Tax Invoice"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-secondary" />
+                    <span>Invoice</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => onReorder(ord)}
+                  className="px-4 py-2 rounded-full bg-secondary text-on-secondary hover:bg-primary font-bold text-xs transition-colors flex items-center gap-1"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Reorder</span>
+                </button>
+              </div>
             </div>
           </div>
         );

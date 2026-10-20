@@ -16,6 +16,7 @@ export default function CartPage() {
   const { 
     items, 
     updateQuantity, 
+    setQuantity,
     removeFromCart, 
     subtotal, 
     coldChainFee, 
@@ -162,17 +163,36 @@ export default function CartPage() {
 
                     <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
                       {/* Quantity Controller */}
-                      <div className="flex items-center bg-surface-container-low border border-surface-container rounded-full px-2 py-1">
+                      <div className="flex items-center bg-surface-container-low border border-surface-container rounded-full px-2 py-1 shadow-xs">
                         <button
                           onClick={() => updateQuantity(item.id, -1)}
                           className="w-7 h-7 rounded-full bg-surface-container-lowest text-primary font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                          title="Decrease quantity"
                         >
                           −
                         </button>
-                        <span className="font-bold text-xs text-primary px-3">{item.quantity}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10000"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) {
+                              setQuantity(item.id, val);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value);
+                            setQuantity(item.id, isNaN(val) || val < 1 ? 1 : val);
+                          }}
+                          className="w-14 text-center font-bold text-xs text-primary bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          aria-label="Quantity"
+                        />
                         <button
                           onClick={() => updateQuantity(item.id, 1)}
                           className="w-7 h-7 rounded-full bg-surface-container-lowest text-primary font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                          title="Increase quantity"
                         >
                           +
                         </button>

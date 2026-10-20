@@ -1,30 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, BookOpen, ArrowRight, Share2, Sparkles, TrendingUp } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
-import { articles, Article } from "@/data/articles";
+import { articles as initialArticles, Article } from "@/data/articles";
 import { useToast } from "@/components/ui/Toast";
+import { getBlogs, getBlogCategories } from "@/lib/api";
 
 export default function BlogPage() {
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
-  const { showToast } = useToast();
-
-  const categories = [
+  const [blogList, setBlogList] = useState<Article[]>(initialArticles);
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([
     { id: "all", label: "All Editorial Pieces" },
     { id: "efficiency", label: "Kitchen Efficiency & ROI" },
     { id: "health", label: "Allicin Science & Health" },
     { id: "storage", label: "Cold-Chain & Storage" },
     { id: "recipes", label: "Chef Techniques & Recipes" },
-  ];
+  ]);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    getBlogs().then((cmsBlogs) => {
+      if (cmsBlogs && cmsBlogs.length > 0) {
+        const formatted: Article[] = cmsBlogs.map((b) => ({
+          id: String(b.id || b.slug),
+          slug: b.slug,
+          category: (b.category as any) || "efficiency",
+          categoryLabel: b.categoryLabel || "Culinary & Kitchen Insights",
+          title: b.title,
+          excerpt: b.summary || b.excerpt || "",
+          readTime: b.readTime || "5 Min Read",
+          tag: b.badge || "Editorial",
+          image: b.image || b.featured_image || "https://lh3.googleusercontent.com/aida-public/AB6AXuDFsqXzpNUbbgN_9GpCJQM25GhYZa6UOGWlIEZriYfwdA_buSMawmO-6q932m-g6329oumxCbCGn3qJ1aL8PCKAvxJgSMsBRdZPcOwLFuAMKYmAQq_cipMWLGG1_QLG_7XnUYB0tU2wE7FfAg4-L9nibkKv3659fe98Tk6KPAL4IzprLhp_wZs5rw0-0wqWVuZOdKCxTSpV2kCmQpaZMbFexXvr5amrwUhDBm5mr3C1r-H8IIF2NvuRuJmqE2_WRWJyRg",
+          date: b.date || "Oct 2026",
+          author: b.author || "OurGrowth Team",
+          badge: b.badge || "Editorial",
+          stats: b.stats,
+        }));
+        setBlogList(formatted);
+      }
+    });
+
+    getBlogCategories().then((apiCategories) => {
+      if (apiCategories && apiCategories.length > 0) {
+        setCategories([
+          { id: "all", label: "All Editorial Pieces" },
+          ...apiCategories.map((c) => ({
+            id: c.slug || c.id,
+            label: c.label || c.name,
+          })),
+        ]);
+      }
+    });
+  }, []);
 
   const filteredArticles = selectedFilter === "all"
-    ? articles
-    : articles.filter((a) => a.category === selectedFilter);
+    ? blogList
+    : blogList.filter((a) => a.category === selectedFilter);
 
   const handleShare = (title: string) => {
     if (navigator.share) {
@@ -89,7 +125,7 @@ export default function BlogPage() {
               <StaggerItem key={article.id}>
                 <article className="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-surface-container flex flex-col h-full group transition-all duration-300">
                   {/* Image Frame */}
-                  <div className="relative h-64 overflow-hidden bg-surface-container shrink-0">
+                  <Link href={`/blog/${article.slug}`} className="block relative h-64 overflow-hidden bg-surface-container shrink-0">
                     <Image
                       src={article.image}
                       alt={article.title}
@@ -104,7 +140,7 @@ export default function BlogPage() {
                     <div className="absolute bottom-4 right-4 bg-primary/90 backdrop-blur-md text-on-primary text-[11px] font-bold px-3 py-1 rounded-full">
                       {article.badge}
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Body Content */}
                   <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
@@ -118,9 +154,11 @@ export default function BlogPage() {
                         <span>{article.date}</span>
                       </div>
 
-                      <h3 className="font-headline-md text-lg sm:text-xl font-bold text-primary group-hover:text-secondary transition-colors mb-3 leading-snug">
-                        {article.title}
-                      </h3>
+                      <Link href={`/blog/${article.slug}`}>
+                        <h3 className="font-headline-md text-lg sm:text-xl font-bold text-primary group-hover:text-secondary transition-colors mb-3 leading-snug">
+                          {article.title}
+                        </h3>
+                      </Link>
 
                       <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed mb-4">
                         {article.excerpt}
@@ -145,10 +183,13 @@ export default function BlogPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-surface-container mt-2">
-                      <span className="font-label-lg text-xs font-bold text-secondary flex items-center gap-1.5 group-hover:text-primary transition-colors">
+                      <Link 
+                        href={`/blog/${article.slug}`}
+                        className="font-label-lg text-xs font-bold text-secondary flex items-center gap-1.5 group-hover:text-primary transition-colors"
+                      >
                         <span>Read Full Guide</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                      </span>
+                      </Link>
                       <button
                         onClick={() => handleShare(article.title)}
                         className="text-on-surface-variant hover:text-secondary p-1.5 rounded-full transition-colors"

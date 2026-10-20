@@ -1,15 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Truck, Lock, Send, Check } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { getBusinessInfo } from "@/lib/api";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const { showToast } = useToast();
+
+  const [phone, setPhone] = useState("+91 94760 20341");
+  const [contactEmail, setContactEmail] = useState("supply@ourgrowth.in");
+  const [fssaiLicense, setFssaiLicense] = useState("12823000000000");
+  const [instagramUrl, setInstagramUrl] = useState("https://www.instagram.com/ourgrowthenterprises/");
+  const [facebookUrl, setFacebookUrl] = useState("https://www.facebook.com/profile.php?id=61594888355783");
+  const [youtubeUrl, setYoutubeUrl] = useState("https://www.youtube.com/@OurGrowthEnterprises");
+
+  useEffect(() => {
+    getBusinessInfo().then((infos) => {
+      if (infos && infos.length > 0) {
+        for (const item of infos) {
+          if (item.key === 'contact_phone' && item.value) setPhone(item.value);
+          else if (item.key === 'contact_email' && item.value) setContactEmail(item.value);
+          else if (item.key === 'fssai_license' && item.value) setFssaiLicense(item.value);
+          else if (item.key === 'social_media') {
+            if (item.social_instagram) setInstagramUrl(item.social_instagram);
+            if (item.social_facebook) setFacebookUrl(item.social_facebook);
+            if (item.social_youtube) setYoutubeUrl(item.social_youtube);
+          }
+        }
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,12 +54,14 @@ export default function Footer() {
           {/* Brand Info & Newsletter */}
           <div className="lg:col-span-2 flex flex-col pr-0 lg:pr-space-lg">
             <div className="flex items-center gap-space-sm mb-space-sm">
-              <Link href="/" className="relative h-12 w-48 bg-surface-container-lowest px-3 py-1.5 rounded-2xl shadow-sm block">
+              <Link href="/" className="h-12 w-48 bg-surface-container-lowest px-3 py-1.5 rounded-2xl shadow-sm flex items-center justify-center">
                 <Image
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxX9XF8O7niPyFjKlIFGqKTb2t1Mv4rQmW4bRCrJ4MHI0Xq7p6WDiR9vwHNuf71KBIcpqizKL9gSAfT-nI7qeMp_mKNvhJqF1Lk_yOpDo_I5zgS7L6-pFbDs-gXjdo8ZjsGbQ_w4voqbT9mlZGfT6gO2O863zCjXT0xlwlJlM3iO5ssfQR0Tm7vu8Ts8mvGVfwJVeu2Eh99KXbXegkw-x0WqaXcXNMMiCxhQXmRdHlnHbtxshEDi63PwA7fDtNFLRPhQ"
+                  src="/images/ourgrowth_logo.png"
                   alt="OurGrowth Enterprises"
-                  fill
-                  className="object-contain p-1"
+                  width={180}
+                  height={44}
+                  className="max-h-10 w-auto object-contain p-1"
+                  style={{ maxHeight: '40px', width: 'auto', maxWidth: '180px' }}
                 />
               </Link>
             </div>
@@ -52,7 +79,7 @@ export default function Footer() {
               </span>
               <div className="flex items-center gap-3">
                 <a
-                  href="https://www.instagram.com/ourgrowthenterprises/"
+                  href={instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-full bg-surface-container-lowest/15 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] flex items-center justify-center text-surface-bright transition-all shadow-sm hover:scale-110"
@@ -63,7 +90,7 @@ export default function Footer() {
                   </svg>
                 </a>
                 <a
-                  href="https://www.facebook.com/profile.php?id=61594888355783"
+                  href={facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-full bg-surface-container-lowest/15 hover:bg-[#1877f2] flex items-center justify-center text-surface-bright transition-all shadow-sm hover:scale-110"
@@ -74,7 +101,7 @@ export default function Footer() {
                   </svg>
                 </a>
                 <a
-                  href="https://www.youtube.com/@OurGrowthEnterprises"
+                  href={youtubeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-full bg-surface-container-lowest/15 hover:bg-[#ff0000] flex items-center justify-center text-surface-bright transition-all shadow-sm hover:scale-110"
@@ -158,12 +185,12 @@ export default function Footer() {
               Bulk Supply &amp; Compliance
             </h4>
             <ul className="flex flex-col gap-space-sm text-surface-variant mb-space-md text-xs sm:text-sm">
-              <li><span>Direct Desk: +91 94760 20341</span></li>
-              <li><span>Email: supply@ourgrowth.in</span></li>
+              <li><span>Direct Desk: {phone}</span></li>
+              <li><span>Email: {contactEmail}</span></li>
               <li><span>Kolkata • Mumbai • Bengaluru • Delhi</span></li>
               <li className="flex items-center gap-space-xs text-secondary-fixed font-bold">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>FSSAI Certified: 12823000000000</span>
+                <span>FSSAI Certified: {fssaiLicense}</span>
               </li>
             </ul>
             <div className="p-4 rounded-2xl bg-surface-container-lowest/5 border border-surface-container-highest/15 text-surface-container-high">

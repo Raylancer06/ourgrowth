@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Star, Quote, ShieldCheck, CheckCircle2, MessageSquarePlus, Sparkles, Building2 } from "lucide-react";
@@ -10,6 +10,7 @@ import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/R
 import Counter from "@/components/animations/Counter";
 import { testimonials } from "@/data/testimonials";
 import { useToast } from "@/components/ui/Toast";
+import { getTestimonials } from "@/lib/api";
 
 interface ExtendedReview {
   id: string;
@@ -93,10 +94,30 @@ const allChefReviews: ExtendedReview[] = [
 ];
 
 export default function TestimonialsPage() {
+  const [reviewsList, setReviewsList] = useState<ExtendedReview[]>(allChefReviews);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", restaurant: "", comment: "", rating: 5 });
   const { showToast } = useToast();
+
+  useEffect(() => {
+    getTestimonials().then((apiTestimonials) => {
+      if (apiTestimonials && apiTestimonials.length > 0) {
+        const mapped: ExtendedReview[] = apiTestimonials.map((t, idx) => ({
+          id: `cms-t-${t.id || idx}`,
+          name: t.client_name,
+          role: t.role || "Verified Chef / Partner",
+          restaurant: t.company,
+          category: (idx % 2 === 0 ? "biriyani" : "cloud") as any,
+          rating: t.rating || 5,
+          comment: t.quote,
+          verifiedVolume: t.verified_volume || "Verified Commercial Account",
+          avatar: t.avatar || t.client_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || "OG",
+        }));
+        setReviewsList(mapped);
+      }
+    }).catch(() => {});
+  }, []);
 
   const categories = [
     { id: "all", label: "All Chef Reviews" },
@@ -107,8 +128,8 @@ export default function TestimonialsPage() {
   ];
 
   const filteredReviews = activeCategory === "all"
-    ? allChefReviews
-    : allChefReviews.filter((r) => r.category === activeCategory);
+    ? reviewsList
+    : reviewsList.filter((r) => r.category === activeCategory);
 
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();

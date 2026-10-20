@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -10,8 +11,23 @@ import Marquee from "@/components/animations/Marquee";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
 import Counter from "@/components/animations/Counter";
 import { tickerItems } from "@/data/ticker";
+import { getStaticPage } from "@/lib/api";
 
 export default function AboutPage() {
+  const [badge, setBadge] = useState("The Pure Peel Revolution");
+  const [headline, setHeadline] = useState("Cultivating Trust, Delivering Pure Flavor.");
+  const [subtitle, setSubtitle] = useState("Founded to eliminate manual prep fatigue and toxic bleaching shortcuts, OurGrowth Enterprises provides premium, ready-to-cook, cold-chain peeled garlic directly from contracted Indian fields to commercial kitchens and discerning homes.");
+
+  useEffect(() => {
+    getStaticPage('about').then((page) => {
+      if (page) {
+        if (page.badge) setBadge(page.badge);
+        if (page.headline) setHeadline(page.headline);
+        if (page.subtitle) setSubtitle(page.subtitle);
+      }
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
       <Header />
@@ -38,19 +54,19 @@ export default function AboutPage() {
                 <Reveal direction="down">
                   <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant self-start font-label-md text-xs sm:text-label-md font-bold">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <span>The Pure Peel Revolution</span>
+                    <span>{badge}</span>
                   </div>
                 </Reveal>
 
                 <Reveal direction="up" delay={0.1}>
                   <h1 className="font-display-hero text-3xl sm:text-5xl lg:text-[56px] text-primary font-extrabold tracking-tight leading-[1.1]">
-                    Cultivating Trust, Delivering <span className="text-secondary italic font-semibold">Pure Flavor</span>.
+                    {headline}
                   </h1>
                 </Reveal>
 
                 <Reveal direction="up" delay={0.2}>
                   <p className="font-body-lg text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
-                    Founded to eliminate manual prep fatigue and toxic bleaching shortcuts, OurGrowth Enterprises provides premium, ready-to-cook, cold-chain peeled garlic directly from contracted Indian fields to commercial kitchens and discerning homes.
+                    {subtitle}
                   </p>
                 </Reveal>
 

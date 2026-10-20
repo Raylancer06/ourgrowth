@@ -98,3 +98,43 @@ export async function resetCustomerPasswordWithOtp(data: {
   });
   return res.json();
 }
+
+export async function sendCustomerEmailVerification(token: string): Promise<{
+  success: boolean;
+  message: string;
+  is_smtp_configured?: boolean;
+  test_code?: string | null;
+  email?: string;
+  is_already_verified?: boolean;
+}> {
+  const res = await fetch(`${API_BASE}/customer/email/send-verification`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  });
+  return res.json();
+}
+
+export async function verifyCustomerEmail(
+  token: string,
+  code: string
+): Promise<{
+  success: boolean;
+  message: string;
+  is_email_verified?: boolean;
+  email_verified_at?: string;
+}> {
+  const res = await fetch(`${API_BASE}/customer/email/verify`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ code }),
+  });
+  return res.json();
+}

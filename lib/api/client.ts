@@ -13,22 +13,48 @@ export const API_BASE = typeof window !== 'undefined'
   ? '/api/erp/v1'
   : (process.env.NEXT_PUBLIC_ERP_API_URL || 'http://127.0.0.1:8000/api/v1');
 
-export async function requestJson<T = any>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const base = getApiBase();
-  const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+const memoryCache = new Map<string, { data: any; expiry: number; pending?: Promise<any> }>();
 
-  const headers = new Headers(options.headers || {});
-  if (!headers.has('Accept')) {
-    headers.set('Accept', 'application/json');
+export async function cachedRequest<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlSeconds: number = 60
+): Promise<T> {
+  const cached = memoryCache.get(key);
+  const now = Date.now();
+  if (cached && cached.expiry > now && cached.data !== null && cached.data !== undefined) {
+    return cached.data;
+  }
+  if (cached?.pending) {
+    return cached.pending;
   }
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const pending = fetcher()
+    .then((data) => {
+      if (data !== null && data !== undefined) {
+        memoryCache.set(key, { data, expiry: Date.now() + ttlSeconds * 1000 });
+      } else {
+        memoryCache.delete(key);
+      }
+      return data;
+    })
+    .catch((err) => {
+      memoryCache.delete(key);
+      throw err;
+    });
 
-  return res.json();
+  memoryCache.set(key, { data: null, expiry: 0, pending });
+  return pending;
+}
+
+export function clearApiCache(prefix?: string) {
+  if (!prefix) {
+    memoryCache.clear();
+    return;
+  }
+  memoryCache.forEach((_, k) => {
+    if (k.startsWith(prefix)) {
+      memoryCache.delete(k);
+    }
+  });
 }

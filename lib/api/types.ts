@@ -64,9 +64,12 @@ export interface ApiTestimonial {
   slug: string;
   client_name: string;
   company: string;
+  role?: string;
   quote: string;
   rating: number;
   city?: string;
+  verified_volume?: string;
+  avatar?: string;
 }
 
 export interface ApiBanner {
@@ -74,9 +77,11 @@ export interface ApiBanner {
   slug: string;
   headline: string;
   subtitle?: string;
+  badge?: string;
   cta_text?: string;
   cta_link?: string;
   image_url?: string;
+  placement?: string;
 }
 
 export interface ApiBusinessInfo {
@@ -85,6 +90,57 @@ export interface ApiBusinessInfo {
   key: string;
   value: string;
   label: string;
+  address?: string;
+  support_phone?: string;
+  support_email?: string;
+  whatsapp_number?: string;
+  operating_hours?: string;
+  fssai_number?: string;
+  social_instagram?: string;
+  social_facebook?: string;
+  social_youtube?: string;
+}
+
+export interface ApiAnnouncement {
+  id: number;
+  slug: string;
+  headline: string;
+  message: string;
+  cta_text?: string;
+  cta_link?: string;
+  target_page?: string;
+  dismissible?: boolean;
+}
+
+export interface ApiStaticPage {
+  id: number;
+  slug: string;
+  title: string;
+  headline: string;
+  subtitle?: string;
+  badge?: string;
+  content?: string;
+  sections?: Array<{ title: string; content: string; icon?: string }>;
+  meta_title?: string;
+  meta_description?: string;
+}
+
+export interface ApiBlog {
+  id: number | string;
+  slug: string;
+  title: string;
+  category: string;
+  categoryLabel?: string;
+  excerpt?: string;
+  summary?: string;
+  content?: string;
+  image?: string;
+  featured_image?: string;
+  author: string;
+  readTime?: string;
+  badge?: string;
+  date?: string;
+  stats?: { label: string; manual: string; ourgrowth: string; savings: string };
 }
 
 export interface EnquiryPayload {

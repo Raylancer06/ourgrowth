@@ -370,6 +370,7 @@ export default function AccountDashboardPage() {
               orders={orders}
               formatStatus={formatStatus}
               onReorder={(ord) => showToast(`1-Click Reorder triggered for ${ord.order_number || ord.id}!`)}
+              onViewInvoice={handleViewInvoice}
             />
           )}
 

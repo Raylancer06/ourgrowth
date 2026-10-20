@@ -28,6 +28,7 @@ interface CartContextType {
   addToCart: (item: Omit<CartItem, "id">) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
+  setQuantity: (id: string, qty: number) => void;
   clearCart: () => void;
   itemCount: number;
   subtotal: number;
@@ -137,11 +138,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         .map((i) => {
           if (i.id === id) {
             const newQty = i.quantity + delta;
-            return newQty > 0 ? { ...i, quantity: newQty } : null;
+            return newQty > 0 ? { ...i, quantity: Math.min(10000, newQty) } : null;
           }
           return i;
         })
         .filter(Boolean) as CartItem[]
+    );
+  };
+
+  const setQuantity = (id: string, qty: number) => {
+    // Wholesale bulk quantity validation: min 1, max 10000
+    const validatedQty = Math.max(1, Math.min(10000, Math.floor(isNaN(qty) ? 1 : qty)));
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, quantity: validatedQty } : i))
     );
   };
 
@@ -185,6 +194,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        setQuantity,
         clearCart,
         itemCount,
         subtotal,

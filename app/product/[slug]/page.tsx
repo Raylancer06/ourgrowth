@@ -237,38 +237,79 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Quantity Counter & CTA */}
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <div className="flex items-center justify-between bg-surface-container-low border border-surface-container rounded-full px-4 py-2 w-full sm:w-36">
+              {/* Quantity Counter & Wholesale Shortcuts */}
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="flex items-center justify-between bg-surface-container-low border border-surface-container rounded-full px-3 py-1.5 w-full sm:w-40 shadow-xs">
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                      title="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10000"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val)) {
+                          setQuantity(Math.max(1, Math.min(10000, val)));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value);
+                        setQuantity(isNaN(val) || val < 1 ? 1 : Math.min(10000, val));
+                      }}
+                      className="w-16 text-center font-bold text-sm text-primary bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      aria-label="Direct order quantity"
+                    />
+                    <button
+                      onClick={() => setQuantity((q) => Math.min(10000, q + 1))}
+                      className="w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                      title="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                    onClick={handleAddToCart}
+                    className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-secondary hover:bg-secondary/90 text-on-secondary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    −
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Add to Cart ({quantity} {currentPack.size})</span>
                   </button>
-                  <span className="font-bold text-sm text-primary px-2">{quantity}</span>
+
                   <button
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-bold flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                    onClick={handleBuyNow}
+                    className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    +
+                    <Zap className="w-4 h-4 text-secondary-fixed" />
+                    <span>Buy Now</span>
                   </button>
                 </div>
 
-                <button
-                  onClick={handleAddToCart}
-                  className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-secondary hover:bg-secondary/90 text-on-secondary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Add to Cart</span>
-                </button>
-
-                <button
-                  onClick={handleBuyNow}
-                  className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-primary hover:bg-primary-container text-on-primary font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  <Zap className="w-4 h-4 text-secondary-fixed" />
-                  <span>Buy Now</span>
-                </button>
+                {/* Bulk Wholesale Quantity Quick-Presets */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1 text-xs text-on-surface-variant">
+                  <span className="font-semibold text-[11px] text-gray-500">Bulk Shortcuts:</span>
+                  {[10, 25, 50, 100, 250, 500].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setQuantity(amt)}
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-colors ${
+                        quantity === amt
+                          ? "bg-primary text-white border-primary"
+                          : "bg-surface-container-lowest border-surface-container hover:border-primary/50 text-primary"
+                      }`}
+                    >
+                      {amt}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Yield Calculator */}

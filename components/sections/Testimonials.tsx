@@ -1,11 +1,33 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Quote, Star } from "lucide-react";
-import { testimonials } from "@/data/testimonials";
+import { testimonials as defaultTestimonials } from "@/data/testimonials";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
+import { getTestimonials } from "@/lib/api";
 
 export default function Testimonials() {
+  const [items, setItems] = useState(defaultTestimonials);
+
+  useEffect(() => {
+    getTestimonials().then((apiTestimonials) => {
+      if (apiTestimonials && apiTestimonials.length > 0) {
+        const mapped = apiTestimonials.slice(0, 3).map((t, idx) => ({
+          id: `cms-${t.id || idx}`,
+          rating: t.rating || 5,
+          comment: t.quote,
+          avatar: t.avatar || t.client_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || "OG",
+          name: t.client_name,
+          role: t.role || "Verified Chef",
+          outlet: t.company,
+          highlighted: idx === 1,
+        }));
+        setItems(mapped);
+      }
+    }).catch(() => {});
+  }, []);
+
   return (
     <section className="py-space-2xl bg-surface-container-low/60 relative">
       <div className="max-w-7xl mx-auto px-margin-mobile lg:px-gutter">
@@ -26,7 +48,7 @@ export default function Testimonials() {
 
         {/* 3 Review Cards */}
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((item) => (
+          {items.map((item) => (
             <StaggerItem key={item.id}>
               <motion.div
                 whileHover={{ y: -6 }}

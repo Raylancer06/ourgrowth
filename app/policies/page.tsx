@@ -1,11 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldCheck, Truck, RotateCcw, Lock, CheckCircle2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { getStaticPage } from "@/lib/api";
 
 export default function PoliciesPage() {
+  const [badge, setBadge] = useState("Commercial Trust & Compliance");
+  const [headline, setHeadline] = useState("Policies, Cold-Chain Logistics & Customer Assurance");
+  const [subtitle, setSubtitle] = useState("Transparent operating protocols governing temperature controls, kitchen delivery inspections, FSSAI regulatory compliance, and replacement guarantees.");
+
+  useEffect(() => {
+    getStaticPage('policies').then((page) => {
+      if (page) {
+        if (page.badge) setBadge(page.badge);
+        if (page.headline) setHeadline(page.headline);
+        if (page.subtitle) setSubtitle(page.subtitle);
+      }
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
       <Header />
@@ -16,13 +32,13 @@ export default function PoliciesPage() {
           <div className="max-w-4xl mx-auto flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-lowest/15 backdrop-blur-md text-secondary-fixed text-xs font-bold uppercase tracking-wider mb-4 border border-white/10">
               <ShieldCheck className="w-4 h-4 text-secondary-fixed" />
-              <span>Commercial Trust &amp; Compliance</span>
+              <span>{badge}</span>
             </div>
             <h1 className="font-display-hero text-3xl sm:text-5xl text-surface-bright font-extrabold tracking-tight mb-4">
-              Policies, Cold-Chain Logistics &amp; Customer Assurance
+              {headline}
             </h1>
             <p className="text-surface-container-high text-xs sm:text-base max-w-2xl leading-relaxed">
-              Transparent operating protocols governing temperature controls, kitchen delivery inspections, FSSAI regulatory compliance, and replacement guarantees.
+              {subtitle}
             </p>
           </div>
         </section>

@@ -143,16 +143,17 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
           </div>
 
           {/* UPI QR Code */}
-          <div className="flex flex-col items-center justify-center text-center p-2 rounded-xl bg-white dark:bg-zinc-900 border border-surface-container">
-            <div className="relative w-28 h-28 rounded-lg overflow-hidden border border-gray-200">
+          <div className="flex flex-col items-center justify-center text-center p-3 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-xs">
+            <div className="relative w-36 h-36 rounded-xl overflow-hidden border border-gray-200 p-1 bg-white">
               <img
                 src={invoice.seller?.upi_qr_url || "/images/custom/ourgrowth_upi_qr.jpg"}
                 alt="Bandhan Bank UPI QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="text-[10px] font-extrabold text-secondary mt-1">Scan &amp; Pay via UPI</span>
-            <span className="text-[9px] text-on-surface-variant font-mono">GPay / PhonePe / Paytm</span>
+            <span className="text-xs font-extrabold text-secondary mt-1.5">Scan &amp; Pay via UPI</span>
+            <span className="text-[10px] text-on-surface-variant font-mono">9775828152@mbkns</span>
+            <span className="text-[9px] text-gray-400">GPay • PhonePe • Paytm • BHIM</span>
           </div>
 
           {/* Authorized Signatory */}

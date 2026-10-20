@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ShieldCheck, Truck, Sparkles, ShoppingBag, ArrowRight, Award, Leaf, Layers } from "lucide-react";
 import Floating from "@/components/animations/Floating";
 import Reveal from "@/components/animations/Reveal";
+import { getBanners } from "@/lib/api";
 
 interface HeroSectionProps {
   onOpenBulkModal: () => void;
@@ -12,6 +14,24 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onOpenBulkModal, onExploreProducts }: HeroSectionProps) {
+  const [headline, setHeadline] = useState("Wholesale Rates For Commercial Kitchens & Food Brands");
+  const [subtitle, setSubtitle] = useState("Supplying bulk restaurants, hotels & caterers with daily cold-chain delivery in 1KG, 5KG & 10KG packs with GST invoices.");
+  const [badge, setBadge] = useState("B2B Wholesale Rates • Cold-Chain Logistics");
+  const [ctaText, setCtaText] = useState("ORDER NOW");
+
+  useEffect(() => {
+    getBanners().then((banners) => {
+      if (banners && banners.length > 0) {
+        const hero = banners.find(b => b.placement === 'hero' || b.slug === 'banner-hero') || banners[0];
+        if (hero) {
+          if (hero.headline) setHeadline(hero.headline);
+          if (hero.subtitle) setSubtitle(hero.subtitle);
+          if (hero.badge) setBadge(hero.badge);
+          if (hero.cta_text) setCtaText(hero.cta_text);
+        }
+      }
+    }).catch(() => {});
+  }, []);
   return (
     <section
       id="home"
@@ -26,7 +46,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
           className="relative w-full h-full"
         >
           <Image
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNI-Zhnqf4Bc4Z80xyh9ZcG5PgHZYZjDOAafR01lMMXThiMh4TqyUjki-RcEB3jM2soHYLy_8W-VS92TeZWdWACYe2rmuPBb9kTL4S6H0viCNcxX87VRiYqxPHRwp499Tmr5YTSAtKEmab384DBeNX0qxq4DkbXuhH_3hJfjrfs23kIvzOY-iYRu-Qv85vy9dBnHYXXgDOecLYzZaZfg8pgipfrSlTOhvfhjG7LzTFLgnk2bAktDnNxQylH1rsSefrIw"
+            src="/images/ourgrowth_login_hero.jpg"
             alt="Fresh Peeled Garlic Harvest"
             fill
             className="object-cover object-center filter blur-[0.5px]"
@@ -45,7 +65,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
         <Floating duration={7} yOffset={14} rotateOffset={3}>
           <div className="w-full h-full rounded-[3rem] p-3 bg-white/5 backdrop-blur-md rotate-[-8deg] border border-white/10 relative overflow-hidden aspect-square">
             <Image
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_Kw5xrGxNfAIULbpDWPYfhOLv5cfHf-rVNdGKMrSvN5IUuWjGWJM0-6slmV8TQMMAL2kDtZx7Z9jgSzEWR6tJK-QM8yiANk-Vvn0hI0OBcHys9xeRR1bd6wqU5Ac1vCZzYX2RCtToIJFcMaAFrUJ-ej9KmtqYsQwoj9eeaCxcTEqnoxmMMWJTRIg1AD6AIr9a_cFbe12BvRriShiDLXZfjQC7M2DiczKS4uzP8gJ-ltlcF6RRBZyrAnVNTTVBgKm-TQ"
+              src="/images/ourgrowth_login_hero.jpg"
               alt="Peeled Garlic Pack Accent"
               fill
               className="object-cover rounded-[2.5rem]"
@@ -58,7 +78,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
         <Floating duration={8} yOffset={16} rotateOffset={-3} delay={1}>
           <div className="w-full h-full rounded-[3rem] p-3 bg-white/5 backdrop-blur-md rotate-[10deg] border border-white/10 relative overflow-hidden aspect-square">
             <Image
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEzQUx7GS3EhxAXSiKaoAxdRi6_BYgoFmd0H50mScvxdcOONgzbtg69gn6mN-V49pcNrt1nKeRnNKL2Im2jSLXI3edA6Wk72I5h5OQx0S3Rh4bXcLO4oPQ4e9u-CKI5S7dQ9nHJ5qrV1pNeGCdpw1e5NnQJcX2egYA0D8g-eTyNJfE4yV_kg5DDa6sKTHjOLsqPX_rXhwalUP-9KaE6DzKhqdLV3IhBnpB5PYW2UZplU1eqDyNZAaAa0A1Gy9syse5vg"
+              src="/images/ourgrowth_login_hero.jpg"
               alt="Peeled Garlic Cloves Accent"
               fill
               className="object-cover rounded-[2.5rem]"
@@ -74,21 +94,21 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
           <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-surface-container-low/10 border border-secondary-fixed/30 backdrop-blur-xl text-primary-fixed font-label-md text-xs sm:text-label-md mb-6 shadow-inner">
             <span className="w-2.5 h-2.5 rounded-full bg-secondary-fixed animate-ping" />
             <Truck className="w-4 h-4 text-secondary-fixed" />
-            <span className="tracking-wide font-medium">B2B Wholesale Rates • Cold-Chain Logistics</span>
+            <span className="tracking-wide font-medium">{badge}</span>
           </div>
         </Reveal>
 
         {/* Main Headline */}
         <Reveal direction="up" delay={0.2}>
           <h1 className="font-display-hero text-3xl sm:text-5xl lg:text-[62px] text-surface-bright font-extrabold tracking-tight max-w-4xl leading-[1.1] mb-6 drop-shadow-md">
-            Wholesale Rates For Commercial Kitchens &amp; Food Brands
+            {headline}
           </h1>
         </Reveal>
 
         {/* Subhead */}
         <Reveal direction="up" delay={0.35}>
           <p className="font-body-lg text-base sm:text-xl text-surface-container-high/90 max-w-2xl leading-relaxed mb-10 font-normal">
-            Supplying bulk restaurants, hotels &amp; caterers with daily cold-chain delivery in 1KG, 5KG &amp; 10KG packs with GST invoices.
+            {subtitle}
           </p>
         </Reveal>
 
@@ -102,7 +122,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
               className="inline-flex items-center gap-3 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-white font-label-lg text-sm sm:text-base px-8 sm:px-9 py-4 rounded-full shadow-[0_10px_25px_rgba(170,247,111,0.25)] hover:shadow-2xl transition-all duration-300 font-extrabold"
             >
               <ShoppingBag className="w-5 h-5 fill-current" />
-              <span className="font-bold tracking-wide">ORDER NOW</span>
+              <span className="font-bold tracking-wide">{ctaText}</span>
               <ArrowRight className="w-4 h-4" />
             </motion.button>
 

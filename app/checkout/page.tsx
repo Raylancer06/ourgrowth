@@ -497,17 +497,22 @@ export default function CheckoutPage() {
 
                   {/* Payment Details Preview */}
                   {paymentMethod === "upi" && (
-                    <div className="mt-3 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center gap-4 text-xs">
+                    <div className="mt-3 p-4 rounded-2xl bg-emerald-50/70 border-2 border-emerald-500/80 flex flex-col sm:flex-row items-center gap-4 text-xs">
                       <img
                         src="/images/ourgrowth_upi_qr.jpg"
                         alt="OurGrowth UPI QR Code"
-                        className="w-20 h-20 rounded-xl border border-emerald-200 shadow-sm shrink-0 object-contain bg-white p-1"
+                        className="w-36 h-36 rounded-2xl border-2 border-emerald-500 shadow-md shrink-0 object-contain bg-white p-2"
                       />
-                      <div>
-                        <div className="font-bold text-emerald-950 text-sm">M/s OurGrowth Enterprises</div>
-                        <div className="font-mono text-emerald-800 font-bold text-xs mt-0.5">UPI ID: 9775828152@mbkns</div>
-                        <div className="text-[11px] text-emerald-700/90 mt-1">
-                          Scan with PhonePe, Google Pay, Paytm, or any BHIM UPI app.
+                      <div className="text-center sm:text-left">
+                        <div className="font-bold text-emerald-950 text-base">M/s OurGrowth Enterprises</div>
+                        <div className="font-mono text-emerald-800 font-extrabold text-sm mt-1 bg-white px-3 py-1 rounded-lg border border-emerald-200 inline-block">
+                          UPI ID: 9775828152@mbkns
+                        </div>
+                        <div className="text-xs text-emerald-800 font-medium mt-2">
+                          Scan using PhonePe, Google Pay, Paytm, BHIM, or any UPI app.
+                        </div>
+                        <div className="text-[11px] text-emerald-600 mt-1 font-semibold">
+                          ✓ High-Resolution Instant Camera Scan Verified
                         </div>
                       </div>
                     </div>

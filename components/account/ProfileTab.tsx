@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from "react";
-import { User, Mail, Phone, Building, Store, Truck, Save, Loader2, Camera, Upload } from "lucide-react";
-import { updateCustomerProfile } from "@/lib/api";
+import { User, Mail, Phone, Building, Store, Truck, Save, Loader2, Camera, Upload, CheckCircle2, ShieldCheck, X } from "lucide-react";
+import { updateCustomerProfile, sendCustomerEmailVerification, verifyCustomerEmail } from "@/lib/api";
 import SecurityTab from "./SecurityTab";
 
 interface ProfileTabProps {
@@ -31,6 +31,67 @@ export default function ProfileTab({
   });
 
   const [savingProfile, setSavingProfile] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(Boolean(profile?.is_email_verified || profile?.email_verified_at));
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [testCodeHint, setTestCodeHint] = useState<string | null>(null);
+
+  const handleInitiateEmailVerify = async () => {
+    if (!token) {
+      showToast("Please log in to verify your email address.");
+      return;
+    }
+    setSendingVerification(true);
+    try {
+      const res = await sendCustomerEmailVerification(token);
+      if (res.success) {
+        if (res.is_already_verified) {
+          setIsEmailVerified(true);
+          showToast("Your email address is already verified.");
+        } else {
+          setShowVerifyModal(true);
+          if (res.test_code) {
+            setTestCodeHint(res.test_code);
+          }
+          showToast(res.message || "Verification code dispatched.");
+        }
+      } else {
+        showToast(res.message || "Failed to send verification email.");
+      }
+    } catch {
+      showToast("Network error while requesting verification.");
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
+  const handleConfirmEmailVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !verifyCode.trim()) return;
+    setVerifyingEmail(true);
+    try {
+      const res = await verifyCustomerEmail(token, verifyCode.trim());
+      if (res.success) {
+        setIsEmailVerified(true);
+        setShowVerifyModal(false);
+        setVerifyCode("");
+        showToast("Email address verified successfully!");
+        onProfileUpdated({
+          ...profile,
+          is_email_verified: true,
+          email_verified_at: res.email_verified_at,
+        });
+      } else {
+        showToast(res.message || "Invalid verification code.");
+      }
+    } catch {
+      showToast("Network error during verification.");
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,9 +241,31 @@ export default function ProfileTab({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                  Email Address *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                    Email Address *
+                  </label>
+                  {isEmailVerified ? (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span>Verified</span>
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-bold">
+                        Unverified
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleInitiateEmailVerify}
+                        disabled={sendingVerification}
+                        className="text-[11px] font-bold text-secondary hover:text-primary hover:underline transition-colors"
+                      >
+                        {sendingVerification ? "Sending..." : "Verify"}
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className="relative">
                   <input
                     required
@@ -342,6 +425,96 @@ export default function ProfileTab({
 
       {/* Password & Security Section directly on Profile */}
       <SecurityTab profile={profile} token={token} showToast={showToast} />
+
+      {/* Email Verification OTP Modal */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-surface-container space-y-6 relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowVerifyModal(false);
+                setVerifyCode("");
+              }}
+              className="absolute top-5 right-5 p-2 rounded-full hover:bg-surface-container-low text-on-surface-variant transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-primary">Verify Email Address</h3>
+                <p className="text-xs text-on-surface-variant">
+                  Confirm verification code for {profileForm.email}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmEmailVerify} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Enter 6-Digit OTP / Verification Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  placeholder="e.g. 123456"
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="w-full text-center tracking-widest text-2xl font-mono py-3 rounded-2xl bg-surface-container-low border border-surface-container focus:outline-none focus:ring-2 focus:ring-secondary text-primary font-bold"
+                  autoFocus
+                />
+              </div>
+
+              {testCodeHint && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                  <span>Development mode OTP: <strong className="font-mono text-sm">{testCodeHint}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setVerifyCode(testCodeHint)}
+                    className="underline text-[11px] font-bold text-amber-950"
+                  >
+                    Auto-fill
+                  </button>
+                </div>
+              )}
+
+              <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                A verification email with your 6-digit confirmation PIN has been sent. If you don't see it, please check your spam folder or click resend below.
+              </p>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleInitiateEmailVerify}
+                  disabled={sendingVerification}
+                  className="flex-1 py-2.5 rounded-full border border-surface-container text-xs font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50"
+                >
+                  {sendingVerification ? "Resending..." : "Resend Code"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={verifyingEmail || verifyCode.trim().length !== 6}
+                  className="flex-1 py-2.5 rounded-full bg-secondary text-on-secondary hover:bg-primary font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {verifyingEmail ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Verifying...</span>
+                    </>
+                  ) : (
+                    <span>Confirm &amp; Verify</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

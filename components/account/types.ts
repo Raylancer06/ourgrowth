@@ -36,6 +36,9 @@ export interface AccountOrder {
   tax_amount?: number;
   delivery_fee?: number;
   discount_amount?: number;
+  payment_status?: string;
+  has_invoice?: boolean;
+  sales_invoice_id?: number;
   invoice_number?: string;
   items?: AccountOrderItem[] | string;
   billing_address?: any;
