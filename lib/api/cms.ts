@@ -57,6 +57,20 @@ export async function getBusinessInfo(): Promise<ApiBusinessInfo[]> {
   }, 120);
 }
 
+export async function getDispatchHubs(): Promise<any[]> {
+  return cachedRequest('cms_dispatch_hubs', async () => {
+    try {
+      const res = await fetch(`${API_BASE}/content/dispatch-hubs`);
+      if (!res.ok) throw new Error('Failed to fetch dispatch hubs');
+      const json = await res.json();
+      return json.data || [];
+    } catch (err) {
+      console.warn('CMS API offline for dispatch hubs, fallback will be used:', err);
+      return [];
+    }
+  }, 120);
+}
+
 export async function getAnnouncements(): Promise<import('./types').ApiAnnouncement[]> {
   return cachedRequest('cms_announcements', async () => {
     try {

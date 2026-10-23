@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import Reveal, { StaggerContainer, StaggerItem } from "@/components/animations/Reveal";
 import { dispatchHubs } from "@/data/hubs";
 import { useToast } from "@/components/ui/Toast";
-import { sendEnquiry, getBusinessInfo, getStaticPage } from "@/lib/api";
+import { sendEnquiry, getBusinessInfo, getStaticPage, getDispatchHubs } from "@/lib/api";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -33,8 +33,12 @@ export default function ContactPage() {
   const [heroHeadline, setHeroHeadline] = useState("Kitchen Dispatch Hubs & Contact Desks");
   const [heroSubtitle, setHeroSubtitle] = useState("Direct connections to our cold-storage dispatch terminals, regional logistics managers, and emergency kitchen supply lines across India.");
 
+  // Dispatch Hubs state (CMS loaded, fallback to default static hubs)
+  const [hubsList, setHubsList] = useState<any[]>(dispatchHubs);
+  const [showHubsSection, setShowHubsSection] = useState(true);
+
   useEffect(() => {
-    // 1. Fetch dynamic business info (phone, email, social links)
+    // 1. Fetch dynamic business info (phone, email, social links, hub visibility)
     getBusinessInfo().then((infos) => {
       if (infos && infos.length > 0) {
         for (const item of infos) {
@@ -42,6 +46,8 @@ export default function ContactPage() {
             setContactPhone(item.value);
           } else if (item.key === 'contact_email' && item.value) {
             setContactEmail(item.value);
+          } else if (item.key === 'show_dispatch_hubs') {
+            setShowHubsSection(item.value === '1' || item.value === 'true');
           } else if (item.key === 'social_media') {
             if (item.social_instagram) setInstagramUrl(item.social_instagram);
             if (item.social_facebook) setFacebookUrl(item.social_facebook);
@@ -51,7 +57,20 @@ export default function ContactPage() {
       }
     }).catch(() => {});
 
-    // 2. Fetch dynamic static page hero text
+    // 2. Fetch dynamic dispatch hubs from CMS
+    getDispatchHubs().then((cmsHubs) => {
+      if (cmsHubs && Array.isArray(cmsHubs)) {
+        if (cmsHubs.length > 0) {
+          setHubsList(cmsHubs);
+          setShowHubsSection(true);
+        } else {
+          // If CMS explicitly has empty list or disabled hubs, respect that
+          // Keep showHubsSection as configured
+        }
+      }
+    }).catch(() => {});
+
+    // 3. Fetch dynamic static page hero text
     getStaticPage('contact').then((page) => {
       if (page) {
         if (page.headline) setHeroHeadline(page.headline);
@@ -172,53 +191,63 @@ export default function ContactPage() {
         </section>
 
         {/* Dispatch Hubs Grid */}
+        {showHubsSection && hubsList && hubsList.length > 0 && (
+          <section className="max-w-7xl mx-auto px-margin-mobile lg:px-gutter pt-12 pb-4">
+            <div className="text-center max-w-xl mx-auto mb-10">
+              <span className="text-xs uppercase font-extrabold tracking-wider text-secondary">
+                Regional Operations
+              </span>
+              <h2 className="font-headline-xl text-2xl sm:text-3xl font-extrabold text-primary mt-1">
+                Temperature-Controlled Dispatch Hubs
+              </h2>
+            </div>
+
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              {hubsList.map((hub, i) => (
+                <StaggerItem key={hub.id || i}>
+                  <div className="bg-surface-container-lowest p-6 rounded-3xl border border-surface-container shadow-sm flex flex-col justify-between h-full hover:shadow-lg transition-shadow">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-secondary uppercase mb-2">
+                        <MapPin className="w-4 h-4 text-secondary shrink-0" />
+                        <span>{hub.state || hub.city}</span>
+                      </div>
+                      <h3 className="font-headline-sm text-lg font-bold text-primary mb-2">
+                        {hub.city}
+                      </h3>
+                      <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
+                        {hub.address}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-surface-container text-xs space-y-1.5">
+                      {(hub.leadTime || hub.lead_time) && (
+                        <div className="flex items-center gap-1.5 text-primary font-bold">
+                          <Clock className="w-3.5 h-3.5 text-secondary" />
+                          <span>{hub.leadTime || hub.lead_time}</span>
+                        </div>
+                      )}
+                      {(hub.reeferFleet || hub.reefer_fleet) && (
+                        <div className="flex items-center gap-1.5 text-on-surface-variant">
+                          <Truck className="w-3.5 h-3.5 text-secondary" />
+                          <span>{hub.reeferFleet || hub.reefer_fleet}</span>
+                        </div>
+                      )}
+                      {(hub.phone || hub.manager) && (
+                        <div className="flex items-center gap-1.5 text-on-surface-variant pt-1 font-semibold">
+                          <PhoneCall className="w-3.5 h-3.5 text-secondary" />
+                          <span>{hub.phone || ""}{hub.manager ? ` (${hub.manager})` : ""}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </section>
+        )}
+
+        {/* Contact Requisition Form */}
         <section className="max-w-7xl mx-auto px-margin-mobile lg:px-gutter py-12">
-          <div className="text-center max-w-xl mx-auto mb-10">
-            <span className="text-xs uppercase font-extrabold tracking-wider text-secondary">
-              Regional Operations
-            </span>
-            <h2 className="font-headline-xl text-2xl sm:text-3xl font-extrabold text-primary mt-1">
-              Temperature-Controlled Dispatch Hubs
-            </h2>
-          </div>
-
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {dispatchHubs.map((hub, i) => (
-              <StaggerItem key={i}>
-                <div className="bg-surface-container-lowest p-6 rounded-3xl border border-surface-container shadow-sm flex flex-col justify-between h-full hover:shadow-lg transition-shadow">
-                  <div>
-                    <div className="flex items-center gap-2 text-xs font-extrabold text-secondary uppercase mb-2">
-                      <MapPin className="w-4 h-4 text-secondary shrink-0" />
-                      <span>{hub.state}</span>
-                    </div>
-                    <h3 className="font-headline-sm text-lg font-bold text-primary mb-2">
-                      {hub.city}
-                    </h3>
-                    <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
-                      {hub.address}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-surface-container text-xs space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-primary font-bold">
-                      <Clock className="w-3.5 h-3.5 text-secondary" />
-                      <span>{hub.leadTime}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-on-surface-variant">
-                      <Truck className="w-3.5 h-3.5 text-secondary" />
-                      <span>{hub.reeferFleet}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-on-surface-variant pt-1 font-semibold">
-                      <PhoneCall className="w-3.5 h-3.5 text-secondary" />
-                      <span>{hub.phone} ({hub.manager})</span>
-                    </div>
-                  </div>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-
-          {/* Contact Requisition Form */}
           <div className="bg-surface-container-lowest rounded-3xl p-6 sm:p-10 border border-surface-container shadow-sm max-w-4xl mx-auto">
             <div className="mb-8 text-center max-w-lg mx-auto">
               <span className="text-xs font-bold uppercase tracking-wider text-secondary">

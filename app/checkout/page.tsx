@@ -152,6 +152,18 @@ export default function CheckoutPage() {
       return;
     }
 
+    const cleanPhone = (formData.phone || "").replace(/[\s\-\+]/g, "").replace(/^91/, "");
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      showToast("Please enter a valid 10-digit Indian mobile number for delivery updates.");
+      return;
+    }
+
+    const cleanPincode = (formData.pincode || "").trim();
+    if (!/^\d{6}$/.test(cleanPincode)) {
+      showToast("Please enter a valid 6-digit delivery pincode.");
+      return;
+    }
+
     setIsPlacing(true);
 
     try {
@@ -497,22 +509,27 @@ export default function CheckoutPage() {
 
                   {/* Payment Details Preview */}
                   {paymentMethod === "upi" && (
-                    <div className="mt-3 p-4 rounded-2xl bg-emerald-50/70 border-2 border-emerald-500/80 flex flex-col sm:flex-row items-center gap-4 text-xs">
-                      <img
-                        src="/images/ourgrowth_upi_qr.jpg"
-                        alt="OurGrowth UPI QR Code"
-                        className="w-36 h-36 rounded-2xl border-2 border-emerald-500 shadow-md shrink-0 object-contain bg-white p-2"
-                      />
-                      <div className="text-center sm:text-left">
-                        <div className="font-bold text-emerald-950 text-base">M/s OurGrowth Enterprises</div>
-                        <div className="font-mono text-emerald-800 font-extrabold text-sm mt-1 bg-white px-3 py-1 rounded-lg border border-emerald-200 inline-block">
+                    <div className="mt-3 p-5 rounded-2xl bg-emerald-50/70 border-2 border-emerald-500/80 flex flex-col sm:flex-row items-center gap-5 text-xs">
+                      <div className="relative group shrink-0">
+                        <img
+                          src="/images/ourgrowth_upi_qr.jpg"
+                          alt="OurGrowth UPI QR Code"
+                          className="w-52 h-52 sm:w-60 sm:h-60 rounded-2xl border-2 border-emerald-600 shadow-lg object-contain bg-white p-2.5 transition-transform hover:scale-105"
+                        />
+                        <div className="text-[10px] text-center font-bold text-emerald-800 mt-1.5 uppercase tracking-wider">
+                          High Resolution Scan
+                        </div>
+                      </div>
+                      <div className="text-center sm:text-left flex-1 space-y-2">
+                        <div className="font-extrabold text-emerald-950 text-lg">M/s OurGrowth Enterprises</div>
+                        <div className="font-mono text-emerald-900 font-extrabold text-base bg-white px-3.5 py-1.5 rounded-xl border border-emerald-300 inline-block shadow-xs">
                           UPI ID: 9775828152@mbkns
                         </div>
-                        <div className="text-xs text-emerald-800 font-medium mt-2">
-                          Scan using PhonePe, Google Pay, Paytm, BHIM, or any UPI app.
+                        <div className="text-xs text-emerald-800 font-medium">
+                          Scan using PhonePe, Google Pay, Paytm, BHIM, or any UPI banking app.
                         </div>
-                        <div className="text-[11px] text-emerald-600 mt-1 font-semibold">
-                          ✓ High-Resolution Instant Camera Scan Verified
+                        <div className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-100/80 px-3 py-1 rounded-full font-bold">
+                          ✓ Crystal-Clear 1060px High-Quality QR
                         </div>
                       </div>
                     </div>

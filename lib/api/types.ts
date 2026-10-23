@@ -99,6 +99,11 @@ export interface ApiBusinessInfo {
   social_instagram?: string;
   social_facebook?: string;
   social_youtube?: string;
+  footer_tagline?: string;
+  footer_about?: string;
+  footer_copyright?: string;
+  footer_cold_chain_text?: string;
+  footer_hubs_text?: string;
 }
 
 export interface ApiAnnouncement {

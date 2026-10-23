@@ -19,6 +19,13 @@ export default function Footer() {
   const [facebookUrl, setFacebookUrl] = useState("https://www.facebook.com/profile.php?id=61594888355783");
   const [youtubeUrl, setYoutubeUrl] = useState("https://www.youtube.com/@OurGrowthEnterprises");
 
+  // Dynamic editable footer texts
+  const [tagline, setTagline] = useState("Pure · Peeled · Garlic — Freshly Peeled. Hygienically Packed. Ready to Cook.");
+  const [aboutText, setAboutText] = useState("Premium farm-direct peeled garlic cloves, dry air-peeled under certified food safety environments for kitchens, cloud kitchens, and restaurant enterprises across India.");
+  const [copyrightText, setCopyrightText] = useState(`© ${new Date().getFullYear()} OurGrowth Enterprises. All Rights Reserved. Pure Peeled Produce Div.`);
+  const [coldChainText, setColdChainText] = useState("Delivered at 2°C–4°C in insulated thermocol crating to preserve pungent allicin natural oils.");
+  const [hubsText, setHubsText] = useState("Kolkata • Mumbai • Bengaluru • Delhi");
+
   useEffect(() => {
     getBusinessInfo().then((infos) => {
       if (infos && infos.length > 0) {
@@ -31,6 +38,11 @@ export default function Footer() {
             if (item.social_facebook) setFacebookUrl(item.social_facebook);
             if (item.social_youtube) setYoutubeUrl(item.social_youtube);
           }
+          if (item.footer_tagline) setTagline(item.footer_tagline);
+          if (item.footer_about) setAboutText(item.footer_about);
+          if (item.footer_copyright) setCopyrightText(item.footer_copyright);
+          if (item.footer_cold_chain_text) setColdChainText(item.footer_cold_chain_text);
+          if (item.footer_hubs_text) setHubsText(item.footer_hubs_text);
         }
       }
     }).catch(() => {});
@@ -66,10 +78,10 @@ export default function Footer() {
               </Link>
             </div>
             <p className="font-body-md text-body-md text-surface-container-high mb-space-md font-semibold">
-              Pure · Peeled · Garlic — Freshly Peeled. Hygienically Packed. Ready to Cook.
+              {tagline}
             </p>
             <p className="text-surface-variant mb-space-lg leading-relaxed font-normal text-xs sm:text-sm">
-              Premium farm-direct peeled garlic cloves, dry air-peeled under certified food safety environments for kitchens, cloud kitchens, and restaurant enterprises across India.
+              {aboutText}
             </p>
 
             {/* Social Media Links */}
@@ -187,7 +199,7 @@ export default function Footer() {
             <ul className="flex flex-col gap-space-sm text-surface-variant mb-space-md text-xs sm:text-sm">
               <li><span>Direct Desk: {phone}</span></li>
               <li><span>Email: {contactEmail}</span></li>
-              <li><span>Kolkata • Mumbai • Bengaluru • Delhi</span></li>
+              <li><span>{hubsText}</span></li>
               <li className="flex items-center gap-space-xs text-secondary-fixed font-bold">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>FSSAI Certified: {fssaiLicense}</span>
@@ -198,7 +210,7 @@ export default function Footer() {
                 Cold-Chain Guarantee
               </span>
               <span className="text-[11px] leading-snug block opacity-90">
-                Delivered at 2°C–4°C in insulated thermocol crating to preserve pungent allicin natural oils.
+                {coldChainText}
               </span>
             </div>
           </div>
@@ -206,7 +218,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-surface-container-highest/15 pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-md text-surface-variant font-body-sm text-xs">
-          <div>© {new Date().getFullYear()} OurGrowth Enterprises. All Rights Reserved. Pure Peeled Produce Div.</div>
+          <div>{copyrightText}</div>
           <div className="flex items-center gap-space-md text-surface-bright flex-wrap justify-center">
             <span className="flex items-center gap-1.5">
               <Lock className="w-4 h-4 text-secondary-fixed shrink-0" />
