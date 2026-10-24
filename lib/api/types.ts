@@ -118,6 +118,8 @@ export interface ApiAnnouncement {
   cta_link?: string;
   target_page?: string;
   dismissible?: boolean;
+  active?: boolean;
+  is_published?: boolean;
 }
 
 export interface ApiStaticPage {
