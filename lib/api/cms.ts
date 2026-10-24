@@ -1,5 +1,5 @@
 import { API_BASE, cachedRequest } from './client';
-import { ApiFaq, ApiTestimonial, ApiBanner, ApiBusinessInfo, EnquiryPayload } from './types';
+import { ApiFaq, ApiTestimonial, ApiBanner, ApiBusinessInfo, ApiMenuItem, EnquiryPayload } from './types';
 
 export async function getFaqs(): Promise<ApiFaq[]> {
   return cachedRequest('cms_faqs', async () => {
@@ -57,7 +57,7 @@ export async function submitTestimonial(payload: {
 export async function getBanners(): Promise<ApiBanner[]> {
   return cachedRequest('cms_banners', async () => {
     try {
-      const res = await fetch(`${API_BASE}/content/banners`);
+      const res = await fetch(`${API_BASE}/content/banners`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch banners');
       const json = await res.json();
       return json.data || [];
@@ -65,7 +65,23 @@ export async function getBanners(): Promise<ApiBanner[]> {
       console.warn('CMS API offline for banners, fallback will be used:', err);
       return [];
     }
-  }, 120);
+  }, 30);
+}
+
+export async function getMenuItems(location?: string): Promise<ApiMenuItem[]> {
+  const cacheKey = `cms_menus_${location || 'all'}`;
+  return cachedRequest(cacheKey, async () => {
+    try {
+      const url = location ? `${API_BASE}/content/menus?location=${encodeURIComponent(location)}` : `${API_BASE}/content/menus`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch navigation menus');
+      const json = await res.json();
+      return json.data || [];
+    } catch (err) {
+      console.warn('CMS API offline for navigation menus, fallback will be used:', err);
+      return [];
+    }
+  }, 30);
 }
 
 export async function getBusinessInfo(): Promise<ApiBusinessInfo[]> {

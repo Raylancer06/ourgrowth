@@ -18,6 +18,11 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
   const [subtitle, setSubtitle] = useState("Supplying bulk restaurants, hotels & caterers with daily cold-chain delivery in 1KG, 5KG & 10KG packs with GST invoices.");
   const [badge, setBadge] = useState("B2B Wholesale Rates • Cold-Chain Logistics");
   const [ctaText, setCtaText] = useState("ORDER NOW");
+  const [ctaLink, setCtaLink] = useState("/shop");
+  const [secondaryCtaText, setSecondaryCtaText] = useState("Wholesale B2B Enquiries");
+  const [secondaryCtaLink, setSecondaryCtaLink] = useState("/bulk-orders");
+  const [heroImage, setHeroImage] = useState("/images/ourgrowth_login_hero.jpg");
+  const [accentImage, setAccentImage] = useState("/images/ourgrowth_login_hero.jpg");
 
   useEffect(() => {
     getBanners().then((banners) => {
@@ -28,6 +33,11 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
           if (hero.subtitle) setSubtitle(hero.subtitle);
           if (hero.badge) setBadge(hero.badge);
           if (hero.cta_text) setCtaText(hero.cta_text);
+          if (hero.cta_link) setCtaLink(hero.cta_link);
+          if (hero.secondary_cta_text) setSecondaryCtaText(hero.secondary_cta_text);
+          if (hero.secondary_cta_link) setSecondaryCtaLink(hero.secondary_cta_link);
+          if (hero.image_url) setHeroImage(hero.image_url);
+          if (hero.accent_image_url) setAccentImage(hero.accent_image_url);
         }
       }
     }).catch(() => {});
@@ -46,7 +56,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
           className="relative w-full h-full"
         >
           <Image
-            src="/images/ourgrowth_login_hero.jpg"
+            src={heroImage}
             alt="Fresh Peeled Garlic Harvest"
             fill
             className="object-cover object-center filter blur-[0.5px]"
@@ -65,7 +75,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
         <Floating duration={7} yOffset={14} rotateOffset={3}>
           <div className="w-full h-full rounded-[3rem] p-3 bg-white/5 backdrop-blur-md rotate-[-8deg] border border-white/10 relative overflow-hidden aspect-square">
             <Image
-              src="/images/ourgrowth_login_hero.jpg"
+              src={accentImage}
               alt="Peeled Garlic Pack Accent"
               fill
               className="object-cover rounded-[2.5rem]"
@@ -78,7 +88,7 @@ export default function HeroSection({ onOpenBulkModal, onExploreProducts }: Hero
         <Floating duration={8} yOffset={16} rotateOffset={-3} delay={1}>
           <div className="w-full h-full rounded-[3rem] p-3 bg-white/5 backdrop-blur-md rotate-[10deg] border border-white/10 relative overflow-hidden aspect-square">
             <Image
-              src="/images/ourgrowth_login_hero.jpg"
+              src={accentImage}
               alt="Peeled Garlic Cloves Accent"
               fill
               className="object-cover rounded-[2.5rem]"

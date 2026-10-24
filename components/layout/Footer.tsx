@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Truck, Lock, Send, Check } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
-import { getBusinessInfo } from "@/lib/api";
+import { getBusinessInfo, getMenuItems } from "@/lib/api";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -26,6 +26,25 @@ export default function Footer() {
   const [coldChainText, setColdChainText] = useState("Delivered at 2°C–4°C in insulated thermocol crating to preserve pungent allicin natural oils.");
   const [hubsText, setHubsText] = useState("Kolkata • Mumbai • Bengaluru • Delhi");
 
+  const [navLinks, setNavLinks] = useState([
+    { name: "Home Storefront", href: "/", target: "_self" },
+    { name: "Produce Catalog", href: "/shop", target: "_self" },
+    { name: "B2B Wholesale Procurement", href: "/bulk-orders", target: "_self" },
+    { name: "About Our Growth & Tech", href: "/about", target: "_self" },
+    { name: "Chef & Caterer Reviews", href: "/testimonials", target: "_self" },
+    { name: "Blog", href: "/blog", target: "_self" },
+    { name: "Dispatch Hubs & Contact", href: "/contact", target: "_self" },
+  ]);
+
+  const [storeLinks, setStoreLinks] = useState([
+    { name: "Shopping Cart", href: "/cart", target: "_self" },
+    { name: "Checkout", href: "/checkout", target: "_self" },
+    { name: "My Account & Addresses", href: "/account", target: "_self" },
+    { name: "Sign In / Register", href: "/login", target: "_self" },
+    { name: "Freshness Help & FAQs", href: "/faqs", target: "_self" },
+    { name: "Cold-Chain & Refund Policy", href: "/policies", target: "_self" },
+  ]);
+
   useEffect(() => {
     getBusinessInfo().then((infos) => {
       if (infos && infos.length > 0) {
@@ -44,6 +63,26 @@ export default function Footer() {
           if (item.footer_cold_chain_text) setColdChainText(item.footer_cold_chain_text);
           if (item.footer_hubs_text) setHubsText(item.footer_hubs_text);
         }
+      }
+    }).catch(() => {});
+
+    getMenuItems('footer_nav').then((items) => {
+      if (items && items.length > 0) {
+        setNavLinks(items.map((i) => ({
+          name: i.label || i.title,
+          href: i.url || i.link || '/',
+          target: i.target || '_self',
+        })));
+      }
+    }).catch(() => {});
+
+    getMenuItems('footer_store').then((items) => {
+      if (items && items.length > 0) {
+        setStoreLinks(items.map((i) => ({
+          name: i.label || i.title,
+          href: i.url || i.link || '/',
+          target: i.target || '_self',
+        })));
       }
     }).catch(() => {});
   }, []);
@@ -166,13 +205,18 @@ export default function Footer() {
               Navigation
             </h4>
             <ul className="flex flex-col gap-space-sm text-surface-variant text-xs sm:text-sm">
-              <li><Link href="/" className="hover:text-secondary-fixed transition-colors">Home Storefront</Link></li>
-              <li><Link href="/shop" className="hover:text-secondary-fixed transition-colors">Produce Catalog</Link></li>
-              <li><Link href="/bulk-orders" className="hover:text-secondary-fixed transition-colors">B2B Wholesale Procurement</Link></li>
-              <li><Link href="/about" className="hover:text-secondary-fixed transition-colors">About Our Growth &amp; Tech</Link></li>
-              <li><Link href="/testimonials" className="hover:text-secondary-fixed transition-colors">Chef &amp; Caterer Reviews</Link></li>
-              <li><Link href="/blog" className="hover:text-secondary-fixed transition-colors">Blog</Link></li>
-              <li><Link href="/contact" className="hover:text-secondary-fixed transition-colors">Dispatch Hubs &amp; Contact</Link></li>
+              {navLinks.map((link) => (
+                <li key={link.name + link.href}>
+                  <Link
+                    href={link.href}
+                    target={link.target || "_self"}
+                    rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
+                    className="hover:text-secondary-fixed transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -182,12 +226,18 @@ export default function Footer() {
               Store &amp; Account
             </h4>
             <ul className="flex flex-col gap-space-sm text-surface-variant text-xs sm:text-sm">
-              <li><Link href="/cart" className="hover:text-secondary-fixed transition-colors">Shopping Cart</Link></li>
-              <li><Link href="/checkout" className="hover:text-secondary-fixed transition-colors">Checkout</Link></li>
-              <li><Link href="/account" className="hover:text-secondary-fixed transition-colors">My Account &amp; Addresses</Link></li>
-              <li><Link href="/login" className="hover:text-secondary-fixed transition-colors">Sign In / Register</Link></li>
-              <li><Link href="/faqs" className="hover:text-secondary-fixed transition-colors">Freshness Help &amp; FAQs</Link></li>
-              <li><Link href="/policies" className="hover:text-secondary-fixed transition-colors">Cold-Chain &amp; Refund Policy</Link></li>
+              {storeLinks.map((link) => (
+                <li key={link.name + link.href}>
+                  <Link
+                    href={link.href}
+                    target={link.target || "_self"}
+                    rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
+                    className="hover:text-secondary-fixed transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

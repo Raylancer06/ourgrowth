@@ -83,8 +83,25 @@ export interface ApiBanner {
   badge?: string;
   cta_text?: string;
   cta_link?: string;
+  secondary_cta_text?: string;
+  secondary_cta_link?: string;
   image_url?: string;
+  accent_image_url?: string;
   placement?: string;
+}
+
+export interface ApiMenuItem {
+  id: number;
+  slug: string;
+  title: string;
+  label: string;
+  url: string;
+  link: string;
+  location: string;
+  badge?: string;
+  target?: string;
+  sort_order: number;
+  active?: boolean;
 }
 
 export interface ApiBusinessInfo {

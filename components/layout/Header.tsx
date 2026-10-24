@@ -9,6 +9,7 @@ import { Search, User, ShoppingBag, Menu, X, ArrowUpRight } from "lucide-react";
 import AnnouncementBar from "@/components/sections/AnnouncementBar";
 import { useToast } from "@/components/ui/Toast";
 import { useCart } from "@/context/CartContext";
+import { getMenuItems } from "@/lib/api";
 
 interface HeaderProps {
   onOpenBulkModal?: () => void;
@@ -58,15 +59,30 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
-    { name: "HOME", href: "/" },
-    { name: "SHOP", href: "/shop" },
-    { name: "BULK ORDERS", href: "/bulk-orders" },
-    { name: "ABOUT US", href: "/about" },
-    { name: "BLOG", href: "/blog" },
-    { name: "FAQS", href: "/faqs" },
-    { name: "CONTACT", href: "/contact" },
+  const defaultNavLinks = [
+    { name: "HOME", href: "/", badge: undefined as string | undefined, target: "_self" },
+    { name: "SHOP", href: "/shop", badge: undefined as string | undefined, target: "_self" },
+    { name: "BULK ORDERS", href: "/bulk-orders", badge: undefined as string | undefined, target: "_self" },
+    { name: "ABOUT US", href: "/about", badge: undefined as string | undefined, target: "_self" },
+    { name: "BLOG", href: "/blog", badge: undefined as string | undefined, target: "_self" },
+    { name: "FAQS", href: "/faqs", badge: undefined as string | undefined, target: "_self" },
+    { name: "CONTACT", href: "/contact", badge: undefined as string | undefined, target: "_self" },
   ];
+
+  const [navLinks, setNavLinks] = useState(defaultNavLinks);
+
+  useEffect(() => {
+    getMenuItems('header').then((items) => {
+      if (items && items.length > 0) {
+        setNavLinks(items.map((item) => ({
+          name: (item.label || item.title || '').toUpperCase(),
+          href: item.url || item.link || '/',
+          badge: item.badge,
+          target: item.target || '_self',
+        })));
+      }
+    }).catch(() => {});
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 transition-all duration-300">
@@ -105,15 +121,24 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
               const isActive = pathname === link.href;
               return (
                 <Link
-                  key={link.name}
+                  key={link.name + link.href}
                   href={link.href}
-                  className={`font-label-md text-xs tracking-wider uppercase rounded-full transition-all py-1.5 px-3.5 font-bold ${
+                  target={link.target || "_self"}
+                  rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
+                  className={`font-label-md text-xs tracking-wider uppercase rounded-full transition-all py-1.5 px-3.5 font-bold flex items-center gap-1.5 ${
                     isActive
                       ? "bg-primary text-on-primary shadow-sm"
                       : "text-on-surface-variant hover:text-primary hover:bg-surface-container/70"
                   }`}
                 >
-                  {link.name}
+                  <span>{link.name}</span>
+                  {link.badge && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wide leading-tight ${
+                      isActive ? "bg-white/25 text-white" : "bg-primary/10 text-primary"
+                    }`}>
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -211,8 +236,10 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
                 const isActive = pathname === link.href;
                 return (
                   <Link
-                    key={link.name}
+                    key={link.name + link.href}
                     href={link.href}
+                    target={link.target || "_self"}
+                    rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`font-headline-sm text-sm sm:text-base py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors ${
                       isActive
@@ -220,7 +247,16 @@ export default function Header({ onOpenBulkModal }: HeaderProps) {
                         : "text-on-surface hover:bg-surface-container"
                     }`}
                   >
-                    <span>{link.name}</span>
+                    <span className="flex items-center gap-2">
+                      <span>{link.name}</span>
+                      {link.badge && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                          isActive ? "bg-white/20 text-white" : "bg-primary text-white"
+                        }`}>
+                          {link.badge}
+                        </span>
+                      )}
+                    </span>
                     <ArrowUpRight className={`w-4 h-4 ${isActive ? "text-white" : "text-on-surface-variant"}`} />
                   </Link>
                 );
