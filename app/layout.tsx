@@ -5,6 +5,7 @@ import SmoothScroll from "@/components/animations/SmoothScroll";
 import ScrollProgress from "@/components/animations/ScrollProgress";
 import { ToastProvider } from "@/components/ui/Toast";
 import { CartProvider } from "@/context/CartContext";
+import CmsHydration from "@/components/providers/CmsHydration";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
         <SmoothScroll>
           <CartProvider>
             <ToastProvider>
+              <CmsHydration />
               <ScrollProgress />
               {children}
             </ToastProvider>
