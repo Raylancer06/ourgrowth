@@ -27,6 +27,8 @@ export interface ApiProduct {
     savings?: string;
   }[];
   image: string;
+  images?: string[];
+  additional_images?: string[];
 }
 
 export interface CustomerAuthResponse {
@@ -67,6 +69,7 @@ export interface ApiTestimonial {
   role?: string;
   quote: string;
   rating: number;
+  category?: string;
   city?: string;
   verified_volume?: string;
   avatar?: string;

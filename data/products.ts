@@ -60,12 +60,32 @@ export function transformApiProduct(ap: any): Product {
         { size: "10 KG", price: Math.round(salePrice * 10 * 0.92), savings: "Save 8%" },
       ];
 
-  let rawImg = ap.image;
-  if (rawImg && typeof rawImg === "string" && !rawImg.startsWith("http") && !rawImg.startsWith("/")) {
-    rawImg = `/api/erp/${rawImg}`;
-  }
+  const resolveImg = (imgUrl: string) => {
+    if (!imgUrl || typeof imgUrl !== "string") return "";
+    if (imgUrl.startsWith("http") || imgUrl.startsWith("/")) return imgUrl;
+    return `/api/erp/${imgUrl}`;
+  };
+
+  let rawImg = resolveImg(ap.image);
   const imgIndex = typeof ap.id === "number" ? Math.abs(ap.id) % DEFAULT_GARLIC_IMAGES.length : 0;
   const prodImg = rawImg || DEFAULT_GARLIC_IMAGES[imgIndex] || DEFAULT_GARLIC_IMAGES[0];
+
+  // Resolve gallery & additional images
+  let resolvedGallery: string[] = [];
+  if (Array.isArray(ap.images) && ap.images.length > 0) {
+    resolvedGallery = ap.images.map(resolveImg).filter(Boolean);
+  } else if (Array.isArray(ap.additional_images) && ap.additional_images.length > 0) {
+    resolvedGallery = [prodImg, ...ap.additional_images.map(resolveImg).filter(Boolean)];
+  }
+
+  if (resolvedGallery.length === 0) {
+    resolvedGallery = [prodImg];
+  }
+
+  // Ensure prodImg is included
+  if (!resolvedGallery.includes(prodImg)) {
+    resolvedGallery.unshift(prodImg);
+  }
 
   return {
     id: ap.sku || `erp-${ap.id}`,
@@ -79,7 +99,7 @@ export function transformApiProduct(ap: any): Product {
     description: ap.description || "Hygienically sorted fresh peeled garlic ready for commercial cooking.",
     fullDescription: ap.long_description || ap.description || "Farm fresh garlic sourced and processed under hygienic GMP standards at OurGrowth Enterprises.",
     image: prodImg,
-    secondaryImages: [prodImg],
+    secondaryImages: resolvedGallery,
     rating: 4.9,
     reviewsCount: 38 + (Number(ap.id || 0) % 25),
     price: salePrice,

@@ -18,7 +18,7 @@ export async function getFaqs(): Promise<ApiFaq[]> {
 export async function getTestimonials(): Promise<ApiTestimonial[]> {
   return cachedRequest('cms_testimonials', async () => {
     try {
-      const res = await fetch(`${API_BASE}/content/testimonials`);
+      const res = await fetch(`${API_BASE}/content/testimonials`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch testimonials');
       const json = await res.json();
       return json.data || [];
@@ -26,7 +26,32 @@ export async function getTestimonials(): Promise<ApiTestimonial[]> {
       console.warn('CMS API offline for testimonials, fallback will be used:', err);
       return [];
     }
-  }, 120);
+  }, 10);
+}
+
+export async function submitTestimonial(payload: {
+  name: string;
+  company?: string;
+  restaurant?: string;
+  role?: string;
+  rating: number;
+  comment: string;
+  city?: string;
+  category?: string;
+}): Promise<{ status: string; message: string; data?: any }> {
+  try {
+    const res = await fetch(`${API_BASE}/content/testimonials`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  } catch (err: any) {
+    return { status: 'error', message: err.message || 'Failed to submit review' };
+  }
 }
 
 export async function getBanners(): Promise<ApiBanner[]> {

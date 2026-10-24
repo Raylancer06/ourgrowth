@@ -11,92 +11,26 @@ import Counter from "@/components/animations/Counter";
 import { testimonials } from "@/data/testimonials";
 import { useToast } from "@/components/ui/Toast";
 import { getTestimonials } from "@/lib/api";
+import { submitTestimonial } from "@/lib/api/cms";
 
 interface ExtendedReview {
   id: string;
   name: string;
   role: string;
   restaurant: string;
-  category: "biriyani" | "cloud" | "banquet" | "finedining";
+  category: "biriyani" | "cloud" | "banquet" | "finedining" | "commercial";
   rating: number;
   comment: string;
   verifiedVolume: string;
   avatar: string;
 }
 
-const allChefReviews: ExtendedReview[] = [
-  {
-    id: "r1",
-    name: "Rahim Khan",
-    role: "Master Chef",
-    restaurant: "Nizam Biriyani Hub (4 Outlets)",
-    category: "biriyani",
-    rating: 5,
-    comment: "We run four high-cadence biriyani outlets. Peeling 40kg of garlic every morning was an absolute nightmare. OurGrowth provides dry, crisp cloves that retain that pungent kick throughout 90 minutes of sealed dum steaming.",
-    verifiedVolume: "Verified 40KG/Day Account",
-    avatar: "RK",
-  },
-  {
-    id: "r2",
-    name: "Chef Sunita Das",
-    role: "Founder & Executive Chef",
-    restaurant: "Urban Wok Cloud Kitchens",
-    category: "cloud",
-    rating: 5,
-    comment: "The dry air-peeled process genuinely makes a difference. Previous market suppliers soaked garlic in water which spoiled our garlic oil sauces within 2 days. OurGrowth cloves last fresh in our walk-in for weeks.",
-    verifiedVolume: "Verified 25KG/Week Account",
-    avatar: "SD",
-  },
-  {
-    id: "r3",
-    name: "Anand Mukherjee",
-    role: "Culinary Director",
-    restaurant: "Royal Bengal Caterers",
-    category: "banquet",
-    rating: 5,
-    comment: "Their 10kg master crate supply has never missed a morning delivery window. When catering for weddings with 2,000+ plates, knowing our garlic is 100% clean and ready gives our kitchen brigade massive peace of mind.",
-    verifiedVolume: "Verified 150KG Event Orders",
-    avatar: "AM",
-  },
-  {
-    id: "r4",
-    name: "Chef Rajesh Nair",
-    role: "Head Chef",
-    restaurant: "Saffron Pavilion Fine Dining",
-    category: "finedining",
-    rating: 5,
-    comment: "The Grade A Jumbo Table cloves are perfectly uniform with zero root hairs or brownish skin remnants. We roast them whole in olive oil for our signature bread baskets.",
-    verifiedVolume: "Verified Grade A Partner",
-    avatar: "RN",
-  },
-  {
-    id: "r5",
-    name: "Manish Aggarwal",
-    role: "Operations Head",
-    restaurant: "Curry Express Cloud Network",
-    category: "cloud",
-    rating: 5,
-    comment: "Eliminating manual knife prep saved our prep staff 2.5 hours every morning. That directly reduced overtime kitchen pay while guaranteeing zero batch inconsistency across our 6 cloud hubs.",
-    verifiedVolume: "Verified Multi-Hub Account",
-    avatar: "MA",
-  },
-  {
-    id: "r6",
-    name: "Ustad Gulam Rasool",
-    role: "Bawarchi Head",
-    restaurant: "Deccan Darbar Caterers",
-    category: "biriyani",
-    rating: 5,
-    comment: "Pure garlic aroma without sour fermentation smell. Once the handi opens, the raw allicin aroma fills the banquet hall. 100% genuine agricultural quality.",
-    verifiedVolume: "Verified 50KG Crate Partner",
-    avatar: "GR",
-  },
-];
-
 export default function TestimonialsPage() {
-  const [reviewsList, setReviewsList] = useState<ExtendedReview[]>(allChefReviews);
+  const [reviewsList, setReviewsList] = useState<ExtendedReview[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", restaurant: "", comment: "", rating: 5 });
   const { showToast } = useToast();
 
@@ -108,15 +42,21 @@ export default function TestimonialsPage() {
           name: t.client_name,
           role: t.role || "Verified Chef / Partner",
           restaurant: t.company,
-          category: (idx % 2 === 0 ? "biriyani" : "cloud") as any,
-          rating: t.rating || 5,
-          comment: t.quote,
+          category: (t.category || (idx % 2 === 0 ? "biriyani" : "cloud")) as any,
+          rating: Number(t.rating) || 5,
+          comment: t.quote || (t as any).comment || "",
           verifiedVolume: t.verified_volume || "Verified Commercial Account",
           avatar: t.avatar || t.client_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || "OG",
         }));
         setReviewsList(mapped);
+      } else {
+        setReviewsList([]);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setReviewsList([]);
+    }).finally(() => {
+      setLoading(false);
+    });
   }, []);
 
   const categories = [
@@ -131,10 +71,42 @@ export default function TestimonialsPage() {
     ? reviewsList
     : reviewsList.filter((r) => r.category === activeCategory);
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsModalOpen(false);
-    showToast("Thank you, Chef! Your kitchen review has been submitted for verification.");
+    if (!newReview.name.trim() || !newReview.comment.trim()) {
+      showToast("Please provide your name and review comment.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await submitTestimonial({
+        name: newReview.name.trim(),
+        restaurant: newReview.restaurant.trim() || "Commercial Kitchen",
+        comment: newReview.comment.trim(),
+        rating: newReview.rating,
+      });
+
+      const newEntry: ExtendedReview = {
+        id: `review-${Date.now()}`,
+        name: newReview.name.trim(),
+        role: "Verified Chef / Partner",
+        restaurant: newReview.restaurant.trim() || "Commercial Kitchen",
+        category: "commercial",
+        rating: newReview.rating,
+        comment: newReview.comment.trim(),
+        verifiedVolume: "Verified Customer Review",
+        avatar: newReview.name.trim().split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || "OG",
+      };
+
+      setReviewsList((prev) => [newEntry, ...prev]);
+      setIsModalOpen(false);
+      setNewReview({ name: "", restaurant: "", comment: "", rating: 5 });
+      showToast("Thank you, Chef! Your kitchen review has been submitted successfully.");
+    } catch {
+      showToast("Failed to submit review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -219,50 +191,74 @@ export default function TestimonialsPage() {
           </div>
         </section>
 
-        {/* Testimonials Grid */}
+        {/* Testimonials Grid / Empty State */}
         <section className="max-w-7xl mx-auto px-margin-mobile lg:px-gutter pb-space-2xl">
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredReviews.map((rev) => (
-              <StaggerItem key={rev.id}>
-                <div className="bg-surface-container-lowest rounded-3xl p-6 sm:p-7 border border-surface-container shadow-sm flex flex-col justify-between h-full hover:shadow-lg transition-all duration-300">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-secondary-container/40 flex items-center justify-center text-secondary">
-                        <Quote className="w-5 h-5 fill-current" />
-                      </div>
-                      <span className="text-[11px] font-bold text-secondary bg-secondary-container/40 px-2.5 py-0.5 rounded-full">
-                        {rev.verifiedVolume}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-secondary mb-3">
-                      {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
-                    </div>
-
-                    <p className="font-body-md text-xs sm:text-sm text-on-surface-variant leading-relaxed mb-6 font-normal">
-                      &ldquo;{rev.comment}&rdquo;
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-4 border-t border-surface-container">
-                    <div className="w-11 h-11 rounded-full bg-primary text-on-primary font-extrabold flex items-center justify-center text-xs shadow-sm shrink-0">
-                      {rev.avatar}
-                    </div>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
+              <div className="w-8 h-8 rounded-full border-4 border-secondary border-t-transparent animate-spin mb-3" />
+              <p className="text-xs font-semibold">Loading verified kitchen feedback...</p>
+            </div>
+          ) : filteredReviews.length === 0 ? (
+            <div className="bg-surface-container-lowest rounded-3xl p-10 sm:p-14 border border-surface-container text-center max-w-xl mx-auto shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-secondary-container/40 text-secondary flex items-center justify-center mx-auto mb-4">
+                <Quote className="w-8 h-8 fill-current" />
+              </div>
+              <h3 className="font-headline-sm text-xl font-bold text-primary mb-2">No Reviews Yet</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant mb-6">
+                Be the first commercial kitchen or executive chef to share your experience with OurGrowth peeled garlic.
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-secondary hover:bg-primary text-on-secondary px-6 py-2.5 rounded-full text-xs font-bold transition-all shadow-sm inline-flex items-center gap-2"
+              >
+                <MessageSquarePlus className="w-4 h-4" />
+                <span>Submit First Kitchen Review</span>
+              </button>
+            </div>
+          ) : (
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredReviews.map((rev) => (
+                <StaggerItem key={rev.id}>
+                  <div className="bg-surface-container-lowest rounded-3xl p-6 sm:p-7 border border-surface-container shadow-sm flex flex-col justify-between h-full hover:shadow-lg transition-all duration-300">
                     <div>
-                      <div className="font-headline-sm text-sm font-bold text-primary">
-                        {rev.name}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-secondary-container/40 flex items-center justify-center text-secondary">
+                          <Quote className="w-5 h-5 fill-current" />
+                        </div>
+                        <span className="text-[11px] font-bold text-secondary bg-secondary-container/40 px-2.5 py-0.5 rounded-full">
+                          {rev.verifiedVolume}
+                        </span>
                       </div>
-                      <div className="font-body-sm text-[11px] text-on-surface-variant">
-                        {rev.role}, {rev.restaurant}
+
+                      <div className="flex items-center gap-1 text-secondary mb-3">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+
+                      <p className="font-body-md text-xs sm:text-sm text-on-surface-variant leading-relaxed mb-6 font-normal">
+                        &ldquo;{rev.comment}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-4 border-t border-surface-container">
+                      <div className="w-11 h-11 rounded-full bg-primary text-on-primary font-extrabold flex items-center justify-center text-xs shadow-sm shrink-0">
+                        {rev.avatar}
+                      </div>
+                      <div>
+                        <div className="font-headline-sm text-sm font-bold text-primary">
+                          {rev.name}
+                        </div>
+                        <div className="font-body-sm text-[11px] text-on-surface-variant">
+                          {rev.role}, {rev.restaurant}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          )}
         </section>
 
         {/* Feedback Modal */}
@@ -276,6 +272,27 @@ export default function TestimonialsPage() {
                 Share your kitchen experience with OurGrowth peeled garlic.
               </p>
               <form onSubmit={handleReviewSubmit} className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Rating</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setNewReview({ ...newReview, rating: star })}
+                        className="p-1 transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`w-5 h-5 ${
+                            star <= newReview.rating ? "text-secondary fill-secondary" : "text-surface-container-high"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs font-bold text-primary ml-2">{newReview.rating} of 5 Stars</span>
+                  </div>
+                </div>
+
                 <input
                   required
                   type="text"
@@ -287,7 +304,7 @@ export default function TestimonialsPage() {
                 <input
                   required
                   type="text"
-                  placeholder="Restaurant / Kitchen Brand"
+                  placeholder="Restaurant / Kitchen Brand (e.g. Royal Bengal Caterers)"
                   value={newReview.restaurant}
                   onChange={(e) => setNewReview({ ...newReview, restaurant: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl bg-surface-container-low text-xs border border-surface-container focus:outline-none focus:ring-2 focus:ring-secondary"
@@ -310,9 +327,10 @@ export default function TestimonialsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-secondary text-on-secondary text-xs font-bold"
+                    disabled={submitting}
+                    className="px-6 py-2 rounded-full bg-secondary text-on-secondary text-xs font-bold disabled:opacity-50"
                   >
-                    Submit Review
+                    {submitting ? "Submitting..." : "Submit Review"}
                   </button>
                 </div>
               </form>

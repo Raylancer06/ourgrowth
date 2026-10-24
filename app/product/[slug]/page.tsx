@@ -83,7 +83,7 @@ export default function ProductDetailPage() {
   }
 
   const currentPack = product.packSizes[selectedPackIndex] || product.packSizes[0];
-  const allImages = [product.image, ...(product.secondaryImages || [])];
+  const allImages = Array.from(new Set([product.image, ...(product.secondaryImages || [])].filter(Boolean)));
 
   const handleAddToCart = () => {
     addToCart({
