@@ -86,6 +86,73 @@ export async function getTestimonials(): Promise<ApiTestimonial[]> {
   }, 180);
 }
 
+export async function getReviews(params?: { productId?: string; productSlug?: string }): Promise<{
+  data: ApiTestimonial[];
+  meta?: { count: number; average_rating: number; total_store_reviews?: number };
+}> {
+  const query = new URLSearchParams();
+  if (params?.productId) query.append('product_id', params.productId);
+  if (params?.productSlug) query.append('product_slug', params.productSlug);
+  const qStr = query.toString();
+  const cacheKey = `cms_reviews_${qStr || 'all'}`;
+
+  return cachedRequest(cacheKey, async () => {
+    try {
+      const url = qStr ? `${API_BASE}/content/reviews?${qStr}` : `${API_BASE}/content/reviews`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch reviews');
+      const json = await res.json();
+      return {
+        data: json.data || [],
+        meta: json.meta || { count: (json.data || []).length, average_rating: 5.0 },
+      };
+    } catch (err) {
+      console.warn('CMS API offline for reviews, fallback will be used:', err);
+      return { data: [], meta: { count: 0, average_rating: 5.0 } };
+    }
+  }, 60);
+}
+
+export async function submitProductReview(payload: {
+  name: string;
+  company?: string;
+  restaurant?: string;
+  role?: string;
+  rating: number;
+  comment: string;
+  city?: string;
+  category?: string;
+  product_id?: string;
+  product_slug?: string;
+}): Promise<{ status: string; message: string; data?: any }> {
+  try {
+    const res = await fetch(`${API_BASE}/content/reviews`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    // Invalidate caches in sessionStorage
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('cms_testimonials');
+        sessionStorage.removeItem('cms_all_content');
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.startsWith('cms_reviews_')) {
+            sessionStorage.removeItem(k);
+          }
+        }
+      } catch {}
+    }
+    return res.json();
+  } catch (err: any) {
+    return { status: 'error', message: err.message || 'Failed to submit review' };
+  }
+}
+
 export async function submitTestimonial(payload: {
   name: string;
   company?: string;
@@ -96,19 +163,7 @@ export async function submitTestimonial(payload: {
   city?: string;
   category?: string;
 }): Promise<{ status: string; message: string; data?: any }> {
-  try {
-    const res = await fetch(`${API_BASE}/content/testimonials`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-    return res.json();
-  } catch (err: any) {
-    return { status: 'error', message: err.message || 'Failed to submit review' };
-  }
+  return submitProductReview(payload);
 }
 
 export async function getBanners(): Promise<ApiBanner[]> {

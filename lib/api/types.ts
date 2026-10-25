@@ -65,14 +65,20 @@ export interface ApiTestimonial {
   id: number;
   slug: string;
   client_name: string;
+  customer_name?: string;
   company: string;
   role?: string;
   quote: string;
+  comment?: string;
   rating: number;
   category?: string;
   city?: string;
   verified_volume?: string;
   avatar?: string;
+  product_id?: string;
+  product_slug?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ApiBanner {

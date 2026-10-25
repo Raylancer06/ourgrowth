@@ -192,7 +192,7 @@ export default function ShopPage() {
                           <span className="font-semibold text-secondary">{product.grade}</span>
                           <div className="flex items-center text-amber-500 font-semibold gap-1 text-xs">
                             <Star className="w-3.5 h-3.5 fill-current" />
-                            <span>{product.rating} ({product.reviewsCount})</span>
+                            <span>{product.reviewsCount > 0 ? `${product.rating} (${product.reviewsCount})` : "Verified Fresh"}</span>
                           </div>
                         </div>
 
