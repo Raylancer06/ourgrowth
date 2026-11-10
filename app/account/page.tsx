@@ -12,10 +12,11 @@ import Footer from "@/components/layout/Footer";
 import { useToast } from "@/components/ui/Toast";
 import { 
   getCustomerProfile, getCustomerOrders, getOrderInvoice, updateCustomerProfile,
-  getCustomerContracts, getContractDetails
+  getCustomerContracts, getContractDetails, getCustomerInvoices, getCustomerLedger,
+  cancelCustomerOrder, deleteCustomerOrder
 } from "@/lib/api";
 
-import { ShippingAddressItem, AccountOrder, AccountInvoice, AccountContract } from "@/components/account/types";
+import { ShippingAddressItem, AccountOrder, AccountInvoice, AccountContract, BackendSalesInvoice, LedgerEntry } from "@/components/account/types";
 import OrdersTab from "@/components/account/OrdersTab";
 import AddressesTab from "@/components/account/AddressesTab";
 import ProfileTab from "@/components/account/ProfileTab";
@@ -37,6 +38,9 @@ export default function AccountDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<AccountOrder[]>([]);
   const [contracts, setContracts] = useState<AccountContract[]>([]);
+  const [backendInvoices, setBackendInvoices] = useState<BackendSalesInvoice[]>([]);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
+  const [ledgerSummary, setLedgerSummary] = useState<any>(null);
   const [addresses, setAddresses] = useState<ShippingAddressItem[]>([]);
   const [savingAddress, setSavingAddress] = useState(false);
 
@@ -58,7 +62,9 @@ export default function AccountDashboardPage() {
       getCustomerProfile(savedToken).catch(() => null),
       getCustomerOrders(savedToken).catch(() => null),
       getCustomerContracts(savedToken).catch(() => null),
-    ]).then(([profileRes, ordersRes, contractsRes]) => {
+      getCustomerInvoices(savedToken).catch(() => null),
+      getCustomerLedger(savedToken).catch(() => null),
+    ]).then(([profileRes, ordersRes, contractsRes, invoicesRes, ledgerRes]) => {
       if (profileRes?.customer) {
         const cust = profileRes.customer;
         setProfile(cust);
@@ -95,6 +101,16 @@ export default function AccountDashboardPage() {
       if (contractsRes?.contracts) {
         setContracts(contractsRes.contracts);
       }
+
+      if (invoicesRes?.invoices) {
+        setBackendInvoices(invoicesRes.invoices);
+      }
+
+      if (ledgerRes?.ledger) {
+        setLedgerEntries(ledgerRes.ledger);
+        setLedgerSummary(ledgerRes.summary);
+      }
+
       setLoading(false);
     });
   }, [router]);
@@ -213,6 +229,45 @@ export default function AccountDashboardPage() {
       showToast("Network error fetching supply contract.");
     } finally {
       setFetchingContract(null);
+    }
+  };
+
+  const handleCancelOrder = async (ord: AccountOrder, reason: string) => {
+    if (!token) return;
+    try {
+      const orderRef = ord.order_number || String(ord.id);
+      const res = await cancelCustomerOrder(token, orderRef, reason);
+      if (res.success) {
+        showToast(res.message || "Order cancelled successfully.");
+        setOrders(prev => prev.map(o => (o.id === ord.id || o.order_number === ord.order_number) ? { ...o, status: 'CANCELLED' } : o));
+        getCustomerInvoices(token).then(r => r?.invoices && setBackendInvoices(r.invoices)).catch(() => {});
+        getCustomerLedger(token).then(r => {
+          if (r?.ledger) {
+            setLedgerEntries(r.ledger);
+            setLedgerSummary(r.summary);
+          }
+        }).catch(() => {});
+      } else {
+        showToast(res.message || "Failed to cancel order.");
+      }
+    } catch {
+      showToast("Network error cancelling order.");
+    }
+  };
+
+  const handleDeleteOrder = async (ord: AccountOrder) => {
+    if (!token) return;
+    try {
+      const orderRef = ord.order_number || String(ord.id);
+      const res = await deleteCustomerOrder(token, orderRef);
+      if (res.success) {
+        showToast(res.message || "Order deleted successfully.");
+        setOrders(prev => prev.filter(o => o.id !== ord.id && o.order_number !== ord.order_number));
+      } else {
+        showToast(res.message || "Failed to delete order.");
+      }
+    } catch {
+      showToast("Network error deleting order.");
     }
   };
 
@@ -371,6 +426,8 @@ export default function AccountDashboardPage() {
               formatStatus={formatStatus}
               onReorder={(ord) => showToast(`1-Click Reorder triggered for ${ord.order_number || ord.id}!`)}
               onViewInvoice={handleViewInvoice}
+              onCancelOrder={handleCancelOrder}
+              onDeleteOrder={handleDeleteOrder}
             />
           )}
 
@@ -404,6 +461,7 @@ export default function AccountDashboardPage() {
           {activeTab === "invoices" && (
             <InvoicesTab
               orders={orders}
+              backendInvoices={backendInvoices}
               fetchingInvoice={fetchingInvoice}
               onViewInvoice={handleViewInvoice}
             />
@@ -418,7 +476,11 @@ export default function AccountDashboardPage() {
           )}
 
           {activeTab === "ledger" && (
-            <LedgerTab orders={orders} />
+            <LedgerTab
+              orders={orders}
+              backendLedger={ledgerEntries}
+              summary={ledgerSummary}
+            />
           )}
 
           {activeTab === "schedule" && (

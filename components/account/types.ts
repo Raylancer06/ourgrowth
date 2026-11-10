@@ -130,3 +130,46 @@ export interface AccountContract {
     phone?: string;
   };
 }
+
+export interface BackendSalesInvoice {
+  id: number;
+  invoice_number: string;
+  invoice_date?: string;
+  due_date?: string;
+  subtotal: number;
+  tax_amount: number;
+  discount_amount?: number;
+  delivery_fee?: number;
+  total_amount: number;
+  paid_amount: number;
+  balance_amount: number;
+  status: string;
+  display_status?: string;
+  notes?: string;
+  items_count?: number;
+  items?: any[];
+  download_url?: string;
+}
+
+export interface BackendCustomerPayment {
+  id: number;
+  payment_number: string;
+  payment_date?: string;
+  payment_amount: number;
+  reference_number?: string;
+  bank_account?: string;
+  notes?: string;
+  status?: string;
+  allocations?: any[];
+}
+
+export interface LedgerEntry {
+  type: 'invoice' | 'payment';
+  date: string;
+  ref_doc: string;
+  particulars: string;
+  debit: number;
+  credit: number;
+  balance: number;
+  status?: string;
+}

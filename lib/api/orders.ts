@@ -45,3 +45,27 @@ export async function getOrderDetails(token: string, orderIdOrNumber: string) {
   });
   return res.json();
 }
+
+export async function cancelCustomerOrder(token: string, orderIdOrNumber: string | number, reason?: string) {
+  const res = await fetch(`${API_BASE}/customer/orders/${orderIdOrNumber}/cancel`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  });
+  return res.json();
+}
+
+export async function deleteCustomerOrder(token: string, orderIdOrNumber: string | number) {
+  const res = await fetch(`${API_BASE}/customer/orders/${orderIdOrNumber}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
+    },
+  });
+  return res.json();
+}
