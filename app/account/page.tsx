@@ -65,6 +65,17 @@ export default function AccountDashboardPage() {
       getCustomerInvoices(savedToken).catch(() => null),
       getCustomerLedger(savedToken).catch(() => null),
     ]).then(([profileRes, ordersRes, contractsRes, invoicesRes, ledgerRes]) => {
+      // Check if session token has expired or is unauthorized
+      if (profileRes?.message === 'Unauthenticated.' || (profileRes && !profileRes.customer && !profileRes.success && profileRes.message)) {
+        localStorage.removeItem("ourgrowth_customer_token");
+        localStorage.removeItem("og_customer_token");
+        localStorage.removeItem("ourgrowth_customer_user");
+        localStorage.removeItem("user_authenticated");
+        showToast("Your session has expired. Please sign in again.");
+        router.replace("/login?redirect=/account");
+        return;
+      }
+
       if (profileRes?.customer) {
         const cust = profileRes.customer;
         setProfile(cust);
