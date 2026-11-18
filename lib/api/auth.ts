@@ -82,8 +82,18 @@ export async function changeCustomerPassword(
   return res.json();
 }
 
+export async function sendForgotPasswordEmailOtp(email: string): Promise<{ success: boolean; message: string; email?: string }> {
+  const res = await fetch(`${API_BASE}/customer/forgot-password/send-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
+}
+
 export async function resetCustomerPasswordWithOtp(data: {
-  phone: string;
+  email?: string;
+  phone?: string;
   otp: string;
   new_password: string;
   new_password_confirmation: string;

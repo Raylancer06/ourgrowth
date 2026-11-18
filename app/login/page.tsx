@@ -11,7 +11,7 @@ import {
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useToast } from "@/components/ui/Toast";
-import { loginCustomer, registerCustomer, sendOtp, resetCustomerPasswordWithOtp } from "@/lib/api";
+import { loginCustomer, registerCustomer, sendOtp, resetCustomerPasswordWithOtp, sendForgotPasswordEmailOtp } from "@/lib/api";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -25,7 +25,7 @@ function LoginFormContent() {
 
   // Forgot Password State
   const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotNewPassword, setForgotNewPassword] = useState("");
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
@@ -34,7 +34,6 @@ function LoginFormContent() {
   const [forgotOtpSent, setForgotOtpSent] = useState(false);
   const [forgotOtpTimer, setForgotOtpTimer] = useState(0);
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotHint, setForgotHint] = useState<string | null>(null);
 
   // Login Form
   const [loginIdentifier, setLoginIdentifier] = useState("");
@@ -249,21 +248,20 @@ function LoginFormContent() {
   }, [forgotOtpTimer]);
 
   const handleSendForgotOtp = async () => {
-    const phone = forgotPhone.trim();
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      showToast("Please enter a valid 10-digit mobile number.");
+    const email = forgotEmail.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast("Please enter a valid registered email address.");
       return;
     }
     setForgotLoading(true);
     try {
-      const res = await sendOtp(phone);
+      const res = await sendForgotPasswordEmailOtp(email);
       if (res.success) {
         setForgotOtpSent(true);
-        setForgotOtpTimer(30);
-        if (res.demo_hint) setForgotHint(res.demo_hint);
-        showToast(res.message || `OTP sent to +91 ${phone}`);
+        setForgotOtpTimer(60);
+        showToast(res.message || `OTP sent to ${email}`);
       } else {
-        showToast(res.message || "Failed to send OTP. Please verify mobile number.");
+        showToast(res.message || "Failed to send OTP. Please verify your email address.");
       }
     } catch {
       showToast("Error sending OTP. Please check your network.");
@@ -274,13 +272,13 @@ function LoginFormContent() {
 
   const handleResetPasswordFromLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const phone = forgotPhone.trim();
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      showToast("Please enter a valid 10-digit mobile number.");
+    const email = forgotEmail.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast("Please enter a valid registered email address.");
       return;
     }
     if (!forgotOtp.trim()) {
-      showToast("Please enter the verification OTP.");
+      showToast("Please enter the 6-digit verification OTP sent to your email.");
       return;
     }
     if (forgotNewPassword.length < 6) {
@@ -295,7 +293,7 @@ function LoginFormContent() {
     setForgotLoading(true);
     try {
       const res = await resetCustomerPasswordWithOtp({
-        phone,
+        email,
         otp: forgotOtp.trim(),
         new_password: forgotNewPassword,
         new_password_confirmation: forgotConfirmPassword,
@@ -304,13 +302,12 @@ function LoginFormContent() {
       if (res.success) {
         showToast("Password reset successfully! Please sign in with your new password.");
         setShowForgotModal(false);
-        setLoginIdentifier(phone);
+        setLoginIdentifier(email);
         setLoginPassword(forgotNewPassword);
         setForgotOtp("");
         setForgotNewPassword("");
         setForgotConfirmPassword("");
         setForgotOtpSent(false);
-        setForgotHint(null);
       } else {
         showToast(res.message || "Could not reset password.");
       }
@@ -422,12 +419,13 @@ function LoginFormContent() {
                     type="button"
                     onClick={() => {
                       setShowForgotModal(true);
-                      const digits = loginIdentifier.replace(/\D/g, "").slice(0, 10);
-                      if (digits.length === 10) setForgotPhone(digits);
+                      if (loginIdentifier.includes("@")) {
+                        setForgotEmail(loginIdentifier.trim());
+                      }
                     }}
                     className="text-[11px] font-bold text-secondary hover:text-primary transition-colors"
                   >
-                    Forgot Password? Reset via OTP →
+                    Forgot Password? Reset via Email OTP →
                   </button>
                 </div>
               </div>
@@ -733,54 +731,40 @@ function LoginFormContent() {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <h3 className="font-headline-sm text-lg font-bold text-primary">
-                  Reset Password via OTP
+                  Reset Password via Email OTP
                 </h3>
                 <p className="text-xs text-on-surface-variant">
-                  Enter your registered 10-digit mobile number to receive a verification OTP code.
+                  Enter your registered email address to receive a confidential 6-digit verification OTP code.
                 </p>
               </div>
 
               <form onSubmit={handleResetPasswordFromLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                    Registered Mobile Number *
+                    Registered Email Address *
                   </label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <input
                         required
-                        type="tel"
-                        maxLength={10}
-                        placeholder="10-digit mobile number"
-                        value={forgotPhone}
-                        onChange={(e) => setForgotPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        type="email"
+                        placeholder="name@example.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value.trim())}
                         className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-surface-container text-xs sm:text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary"
                       />
-                      <Phone className="w-4 h-4 text-on-surface-variant absolute left-3.5 top-3" />
+                      <Mail className="w-4 h-4 text-on-surface-variant absolute left-3.5 top-3" />
                     </div>
                     <button
                       type="button"
                       onClick={handleSendForgotOtp}
-                      disabled={forgotLoading || forgotOtpTimer > 0 || forgotPhone.length !== 10}
+                      disabled={forgotLoading || forgotOtpTimer > 0 || !forgotEmail.includes("@")}
                       className="px-3.5 py-2.5 rounded-xl bg-secondary hover:bg-primary text-on-secondary font-bold text-xs shrink-0 transition-colors disabled:opacity-50"
                     >
                       {forgotOtpTimer > 0 ? `${forgotOtpTimer}s` : forgotOtpSent ? "Resend" : "Send OTP"}
                     </button>
                   </div>
                 </div>
-
-                {forgotHint && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 text-xs flex items-center justify-between">
-                    <span>Test code: <strong>{forgotHint}</strong></span>
-                    <button
-                      type="button"
-                      onClick={() => setForgotOtp(forgotHint)}
-                      className="underline font-bold hover:text-amber-900 text-[11px]"
-                    >
-                      Fill
-                    </button>
-                  </div>
-                )}
 
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
@@ -791,7 +775,7 @@ function LoginFormContent() {
                       required
                       type="text"
                       maxLength={6}
-                      placeholder="Enter 4 or 6-digit OTP"
+                      placeholder="Enter 6-digit OTP from email"
                       value={forgotOtp}
                       onChange={(e) => setForgotOtp(e.target.value.trim())}
                       className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-surface-container text-xs sm:text-sm text-on-surface font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-secondary"

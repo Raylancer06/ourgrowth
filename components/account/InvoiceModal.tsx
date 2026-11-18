@@ -60,9 +60,15 @@ export default function InvoiceModal({ invoice, onClose }: InvoiceModalProps) {
             <span className="text-[10px] uppercase font-bold text-secondary block">Bill To (Recipient)</span>
             <p className="font-bold text-primary text-sm">{invoice.buyer?.company_name || invoice.buyer?.contact_person}</p>
             <p className="text-on-surface-variant">
-              {typeof invoice.buyer?.billing_address === "object"
-                ? `${invoice.buyer?.billing_address?.address || ""} ${invoice.buyer?.billing_address?.city || ""}`
-                : invoice.buyer?.billing_address}
+              {typeof invoice.buyer?.billing_address === "object" && invoice.buyer?.billing_address !== null
+                ? [
+                    invoice.buyer?.billing_address?.address || invoice.buyer?.billing_address?.address_line_1,
+                    invoice.buyer?.billing_address?.address_line_2,
+                    invoice.buyer?.billing_address?.city,
+                    invoice.buyer?.billing_address?.state,
+                    invoice.buyer?.billing_address?.zip_code || invoice.buyer?.billing_address?.pincode
+                  ].filter(Boolean).join(", ")
+                : invoice.buyer?.billing_address || "—"}
             </p>
             <p className="text-on-surface-variant">Contact: {invoice.buyer?.phone || invoice.buyer?.email}</p>
             <p className="font-semibold text-primary">

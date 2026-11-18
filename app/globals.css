@@ -54,3 +54,36 @@ html.lenis, html.lenis body {
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
 }
+
+/* Certified Tax Invoice Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #invoice-modal-content,
+  #invoice-modal-content * {
+    visibility: visible;
+  }
+  #invoice-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  #invoice-modal-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+  }
+  #invoice-modal-content button {
+    display: none !important;
+  }
+}

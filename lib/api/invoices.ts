@@ -1,8 +1,9 @@
 import { API_BASE } from './client';
 
 export async function getOrderInvoice(token: string, orderIdOrNumber: string | number) {
+  const encodedRef = encodeURIComponent(String(orderIdOrNumber));
   try {
-    const res = await fetch(`${API_BASE}/customer/orders/${orderIdOrNumber}/invoice`, {
+    const res = await fetch(`${API_BASE}/customer/orders/${encodedRef}/invoice`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
@@ -13,7 +14,7 @@ export async function getOrderInvoice(token: string, orderIdOrNumber: string | n
   } catch {}
 
   try {
-    const invRes = await fetch(`${API_BASE}/customer/invoices/${orderIdOrNumber}`, {
+    const invRes = await fetch(`${API_BASE}/customer/invoices/${encodedRef}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
